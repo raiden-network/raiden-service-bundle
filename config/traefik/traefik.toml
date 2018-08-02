@@ -1,0 +1,33 @@
+debug = false
+
+logLevel = "INFO"
+defaultEntryPoints = ["https","http"]
+
+[entryPoints]
+  [entryPoints.http]
+    address = ":80"
+    [entryPoints.http.redirect]
+      entryPoint = "https"
+  [entryPoints.https]
+    address = ":443"
+    [entryPoints.https.tls]
+
+[retry]
+
+[docker]
+  watch = true
+  exposedbydefault = false
+
+[acme]
+  storage = "/data/acme.json"
+  entryPoint = "https"
+  OnHostRule = true
+
+  [acme.httpChallenge]
+    entryPoint = "http"
+
+[web]
+  address = ":8080"
+  readOnly = true
+  [web.metrics.prometheus]
+    buckets=[0.1,0.3,1.2,5.0]

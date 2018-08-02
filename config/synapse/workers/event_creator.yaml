@@ -1,0 +1,13 @@
+worker_app: synapse.app.event_creator
+
+# The replication listener on the synapse to talk to.
+worker_replication_host: synapse
+worker_replication_port: 9092
+worker_replication_http_port: 9093
+
+worker_listeners:
+ - type: http
+   port: 8008
+   resources:
+     - names:
+       - client

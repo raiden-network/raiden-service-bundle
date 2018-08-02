@@ -1,0 +1,172 @@
+# Only compose file versions >=2.2,<3 support the `scale` parameter
+version: "2.3"
+
+services:
+  synapse:
+    build:
+      context: build/synapse
+      args:
+        SYNAPSE_VERSION: v0.33.0
+    image: raiden-network/synapse
+    restart: always
+    ports:
+      - 8448:8448
+    volumes:
+      - ./config/synapse:/config
+      - ${DATA_DIR:-./data}/synapse:/data
+    environment:
+      - SERVER_NAME
+    depends_on:
+      db:
+        condition: service_healthy
+#      cert_extractor:
+#        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.default.port=8008"
+      - "traefik.default.frontend.rule=Host:${SERVER_NAME}"
+      - "traefik.default.backend.healthcheck.path=/_matrix/client/versions"
+      - "traefik.metrics.port=9101"
+      - "traefik.metrics.frontend.rule=Host:metrics.${SERVER_NAME}"
+      - "traefik.metrics.frontend.whiteList.sourceRange=${CIDR_ALLOW_METRICS}"
+      - "traefik.metrics.frontend.whiteList.useXForwardedFor=false"
+
+  synchrotron:
+    image: raiden-network/synapse
+    restart: always
+    volumes:
+      - ./config/synapse:/config
+      - ${DATA_DIR:-./data}/synapse:/data
+    environment:
+      - SERVER_NAME
+    depends_on:
+      synapse:
+        condition: service_healthy
+    entrypoint: ["/synapse-venv/bin/python", "-m", "synapse.app.synchrotron", "--config-path", "/config/synapse.yaml", "--config-path", "/config/workers/synchrotron.yaml"]
+    scale: ${WORKER_COUNT:-4}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.port=8008"
+      - "traefik.frontend.rule=Host:${SERVER_NAME}; PathPrefix: /_matrix/client/{version:(v2_alpha|r0)}/sync, /_matrix/client/{version:(api/v1|v2_alpha|r0)}/events, /_matrix/client/{version:(api/v1|r0)}/initialSync, /_matrix/client/{version:(api/v1|r0)}/rooms/{room:[^/]+}/initialSync"
+
+#  federation_reader:
+#    image: raiden-network/synapse
+#    restart: always
+#    volumes:
+#      - ./config/synapse:/config
+#      - ${DATA_DIR:-./data}/synapse:/data
+#    environment:
+#      - SERVER_NAME
+#      - synapse:
+#          condition: service_healthy
+#    depends_on:
+#      synapse:
+#        condition: service_healthy
+#    entrypoint: ["/synapse-venv/bin/python", "-m", "synapse.app.federation_reader", "--config-path", "/config/synapse.yaml", "--config-path", "/config/workers/federation_reader.yaml"]
+#    labels:
+#      - "traefik.enable=true"
+#      - "traefik.port=8008"
+#      - "traefik.frontend.rule=Host:${SERVER_NAME}; PathPrefix: /_matrix/federation/v1/{type:(event|state|state_ids|backfill|get_missing_events|publicRooms)}"
+#
+#  federation_sender:
+#    image: raiden-network/synapse
+#    restart: always
+#    volumes:
+#      - ./config/synapse:/config
+#      - ${DATA_DIR:-./data}/synapse:/data
+#    environment:
+#      - SERVER_NAME
+#    depends_on:
+#      synapse:
+#        condition: service_healthy
+#    entrypoint: ["/synapse-venv/bin/python", "-m", "synapse.app.federation_sender", "--config-path", "/config/synapse.yaml", "--config-path", "/config/workers/federation_sender.yaml"]
+#
+  client_reader:
+    image: raiden-network/synapse
+    restart: always
+    volumes:
+      - ./config/synapse:/config
+      - ${DATA_DIR:-./data}/synapse:/data
+    environment:
+      - SERVER_NAME
+    depends_on:
+      synapse:
+        condition: service_healthy
+    entrypoint: ["/synapse-venv/bin/python", "-m", "synapse.app.client_reader", "--config-path", "/config/synapse.yaml", "--config-path", "/config/workers/client_reader.yaml"]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.port=8008"
+      - "traefik.frontend.rule=Host:${SERVER_NAME}; PathPrefix: /_matrix/client/{version:(api/v1|r0|unstable)}/publicRooms"
+
+  user_dir:
+    image: raiden-network/synapse
+    restart: always
+    volumes:
+      - ./config/synapse:/config
+      - ${DATA_DIR:-./data}/synapse:/data
+    environment:
+      - SERVER_NAME
+    depends_on:
+      synapse:
+        condition: service_healthy
+    entrypoint: ["/synapse-venv/bin/python", "-m", "synapse.app.user_dir", "--config-path", "/config/synapse.yaml", "--config-path", "/config/workers/user_dir.yaml"]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.port=8008"
+      - "traefik.frontend.rule=Host:${SERVER_NAME}; PathPrefix: /_matrix/client/{version:(api/v1|r0|unstable)}/user_directory/search"
+
+  event_creator:
+    image: raiden-network/synapse
+    restart: always
+    volumes:
+      - ./config/synapse:/config
+      - ${DATA_DIR:-./data}/synapse:/data
+    environment:
+      - SERVER_NAME
+    depends_on:
+      synapse:
+        condition: service_healthy
+    entrypoint: ["/synapse-venv/bin/python", "-m", "synapse.app.event_creator", "--config-path", "/config/synapse.yaml", "--config-path", "/config/workers/event_creator.yaml"]
+    scale: ${WORKER_COUNT:-4}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.port=8008"
+      - "traefik.frontend.rule=Host:${SERVER_NAME}; PathPrefix: /_matrix/client/{version:(api/v1|r0|unstable)}/rooms/{room:.*}/send"
+
+  db:
+    build:
+      context: build/db
+    restart: always
+    volumes:
+      - ${DATA_DIR:-./data}/db:/var/lib/postgresql/data
+    healthcheck:
+      test: echo 'select 1' | psql -U postgres > /dev/null || exit 1
+
+#  cert_extractor:
+#    build:
+#      context: build/extract-certs
+#    restart: always
+#    volumes:
+#      - ${DATA_DIR:-./data}/traefik:/in:ro
+#      - ${DATA_DIR:-./data}/synapse:/out
+#    depends_on:
+#      traefik:
+#        condition: service_started
+#    command: /in/acme.json /out/keys
+
+  traefik:
+    image: traefik:1.7
+    restart: always
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./config/traefik:/etc/traefik
+      - ${DATA_DIR:-./data}/traefik:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --acme.email=${LETSENCRYPT_EMAIL}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.port=8080"
+      - "traefik.frontend.rule=Host:proxy.${SERVER_NAME}"
+      - "traefik.frontend.whiteList.sourceRange=${CIDR_ALLOW_PROXY}"
