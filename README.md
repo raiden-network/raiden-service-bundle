@@ -44,14 +44,22 @@ provide configurations with services split among multiple servers.
 ```
 +-------------------+
 |                   |
-|      Traefik      |
+|   Raiden clients  |
+|                   |
++---------+---------+
+          |
+==========|==========
+          |
++---------v---------+
+|                   |
+|      Traefik      |  
 |                   |
 +---------+---------+
           |
 +---------v---------+
 |                   |
-|      Synapse      |
-|                   |
+|      Synapse      <-----> Federation to other
+|                   |       Raiden Matrix servers
 +---------+---------+
           |
 +---------v---------+
@@ -91,7 +99,7 @@ Minumum recommended for a production setup:
 
 - 16 GiB Ram
 - 8 Cores
-- 100 GiB SSD
+- 50 GiB SSD
 
 ### Software
 
@@ -128,8 +136,17 @@ Minumum recommended for a production setup:
 1. Copy `.env.template` to `.env` and modify the values to fit your setup (see inline comments for details)
    - We would appreciate it if you allow us access to the monitoring interfaces 
      (to do that uncomment the default values of the `CIDR_ALLOW_METRICS` and `CIDR_ALLOW_PROXY` settings).
+   - We also recommend that you provide your own monitoring. The setup of which is currently out of scope of this document. 
 1. Run `docker-compose build` to build the containers
-1. Run `docker-compose up -d` to start all services 
+1. Run `docker-compose up -d` to start all services
+   - The services are configured to automatically restart in case of a crash or reboot
+1. Add a cron job to regularly (i.e. once a day) restart the `synapse` service in order to pick up new whitelisted federation peers
+   - This will be better automated in future releases
+   - Recommended cron job command:
+     ```
+     docker-compose -f <path-to-compose-file> restart synapse
+     ``` 
+1. Verify the service is up by opening the domain in a browser. You should see the synapse login screen.
 
 ### Submit
 
@@ -152,8 +169,8 @@ docker-compose up -d
 
 ### Protection against Spam / (D)DoS attacks
 
-There is currently very little protection against Spam and / or DDoS attacks. 
-Both issues will be addressed in future updates. 
+There is currently only some protection against Spam and / or DDoS attacks. 
+This will be addressed in future updates. 
 
 ### Known servers
 

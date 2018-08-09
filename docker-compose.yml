@@ -43,6 +43,8 @@ services:
       synapse:
         condition: service_healthy
     entrypoint: ["/synapse-venv/bin/python", "-m", "synapse.app.synchrotron", "--config-path", "/config/synapse.yaml", "--config-path", "/config/workers/synchrotron.yaml"]
+    healthcheck:
+      disable: true
     scale: ${WORKER_COUNT:-4}
     labels:
       - "traefik.enable=true"
@@ -63,6 +65,8 @@ services:
 #      synapse:
 #        condition: service_healthy
 #    entrypoint: ["/synapse-venv/bin/python", "-m", "synapse.app.federation_reader", "--config-path", "/config/synapse.yaml", "--config-path", "/config/workers/federation_reader.yaml"]
+#    healthcheck:
+#      disable: true
 #    labels:
 #      - "traefik.enable=true"
 #      - "traefik.port=8008"
@@ -80,6 +84,8 @@ services:
 #      synapse:
 #        condition: service_healthy
 #    entrypoint: ["/synapse-venv/bin/python", "-m", "synapse.app.federation_sender", "--config-path", "/config/synapse.yaml", "--config-path", "/config/workers/federation_sender.yaml"]
+#    healthcheck:
+#      disable: true
 #
   client_reader:
     image: raiden-network/synapse
@@ -93,6 +99,8 @@ services:
       synapse:
         condition: service_healthy
     entrypoint: ["/synapse-venv/bin/python", "-m", "synapse.app.client_reader", "--config-path", "/config/synapse.yaml", "--config-path", "/config/workers/client_reader.yaml"]
+    healthcheck:
+      disable: true
     labels:
       - "traefik.enable=true"
       - "traefik.port=8008"
@@ -110,6 +118,8 @@ services:
       synapse:
         condition: service_healthy
     entrypoint: ["/synapse-venv/bin/python", "-m", "synapse.app.user_dir", "--config-path", "/config/synapse.yaml", "--config-path", "/config/workers/user_dir.yaml"]
+    healthcheck:
+      disable: true
     labels:
       - "traefik.enable=true"
       - "traefik.port=8008"
@@ -127,6 +137,8 @@ services:
       synapse:
         condition: service_healthy
     entrypoint: ["/synapse-venv/bin/python", "-m", "synapse.app.event_creator", "--config-path", "/config/synapse.yaml", "--config-path", "/config/workers/event_creator.yaml"]
+    healthcheck:
+      disable: true
     scale: ${WORKER_COUNT:-4}
     labels:
       - "traefik.enable=true"
@@ -165,6 +177,12 @@ services:
       - ${DATA_DIR:-./data}/traefik:/data
       - /var/run/docker.sock:/var/run/docker.sock
     command: --acme.email=${LETSENCRYPT_EMAIL}
+    depends_on:
+      - synapse
+      - synchrotron
+      - client_reader
+      - user_dir
+      - event_creator
     labels:
       - "traefik.enable=true"
       - "traefik.port=8080"
