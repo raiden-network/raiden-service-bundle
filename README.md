@@ -5,7 +5,7 @@
 This repository contains the documentation and configuration necessary to run a 
 Raiden Transport Matrix server.
 
-**Current release:** [2018.8.0](https://github.com/raiden-network/raiden-transport/tree/2018.8.0) 
+**Current release:** [2018.8.1](https://github.com/raiden-network/raiden-transport/tree/2018.8.1) 
 
 ## Table of Contents
 
@@ -127,11 +127,11 @@ Minumum recommended for a production setup:
 
 ### Installing
 
-1. Clone the [current release version of this repository](https://github.com/raiden-network/raiden-transport/tree/2018.8.0) 
+1. Clone the [current release version of this repository](https://github.com/raiden-network/raiden-transport/tree/2018.8.1) 
    to a suitable location on the server:
    
    ```shell
-   git clone -b 2018.8.0 https://github.com/raiden-network/raiden-transport.git
+   git clone -b 2018.8.1 https://github.com/raiden-network/raiden-transport.git
    ```
 1. Copy `.env.template` to `.env` and modify the values to fit your setup (see inline comments for details)
    - We would appreciate it if you allow us access to the monitoring interfaces 
@@ -186,4 +186,5 @@ or contact us via email at contact@raiden.nework.
 
 ## Changelog
 
-- 2018-08-02 - `2018.8.0` - **Initial release**
+- 2018-08-09 - `2018.8.1` - **Initial public release**
+- 2018-08-02 - `2018.8.0` - **Initial version**
