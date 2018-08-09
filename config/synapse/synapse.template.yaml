@@ -94,16 +94,20 @@ dynamic_thumbnails: false
 url_preview_enabled: False
 
 ## Registration
-enable_registration: True
+enable_registration: False
 enable_registration_captcha: False
 allow_guest_access: False
+
+password_providers:
+  - module: 'eth_auth_provider.EthAuthProvider'
+    config:
+      enabled: true
 
 bcrypt_rounds: 12
 
 trusted_third_party_id_servers:
     - localhost
 
-auto_join_rooms:
 
 ## Metrics ###
 enable_metrics: True
