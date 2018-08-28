@@ -12,7 +12,7 @@ PATH_MACAROON_KEY = Path('/data/keys/macaroon.key')
 PATH_KNOWN_FEDERATION_SERVERS = Path('/data/known_federation_servers.yaml')
 
 URL_KNOWN_FEDERATION_SERVERS_DEFAULT = (
-    'https://github.com/raiden-network/raiden-transport/blob/master/known_servers.yaml'
+    'https://raw.githubusercontent.com/raiden-network/raiden-transport/master/known_servers.yaml'
 )
 
 
