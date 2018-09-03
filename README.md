@@ -185,6 +185,8 @@ or contact us via email at contact@raiden.nework.
 
 ## Changelog
 
-- 2018-10-18 - `2018.8.2` - Purge historic state and restart service, no need for a cron service anymore
+- 2018-10-18 - `2018.10.0` - **Maintenence release** 
+  - Add new servers to known list
+  - Automatically purge historic state and restart service once a day, removing the need for an external cron service
 - 2018-08-09 - `2018.8.1` - **Initial public release**
 - 2018-08-02 - `2018.8.0` - **Initial version**
