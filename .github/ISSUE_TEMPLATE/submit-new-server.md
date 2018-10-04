@@ -19,5 +19,8 @@ about: Submit a new Raiden Matrix server for inclusion in the list of known serv
 # Intended uptime
 <!-- Please describe for how long you intend to host this server and whether you will be able to react to outages -->
 
+# Contact address
+<!-- Please provide a contact email address where we can reach you. This will only be used to notify you about updates or operational issues. If you don't want to post the address publicly here you can also send it to contact@raiden.network. -->
+
 # Who you are 
 <!-- Optional, please give a few details about who you or your company are and why you are interested in hosting a Raiden Matrix server -->
