@@ -1,0 +1,5 @@
+click
+requests
+psycopg2-binary
+eth-keyfile
+eth-keys
