@@ -174,7 +174,7 @@ def purge(
             )
             if not cur.rowcount:
                 raise RuntimeError(f'User {admin_user!r} not found')
-            is_admin = cur.fetchone()[0]
+            is_admin, = cur.fetchone()
             if admin_set and not is_admin:
                 cur.execute(
                     'UPDATE users SET admin=1 WHERE name = %s ;',
@@ -218,6 +218,8 @@ def purge(
             body = {'delete_local_events': True}
             if event_id:
                 body['purge_up_to_event_id'] = event_id
+            else:
+                body['purge_up_to_ts'] = int(time.time() * 1000)
             response = session.post(
                 urljoin(server, '/_matrix/client/r0/admin/purge_history/' + quote(room_id)),
                 params={'access_token': admin_access_token},
@@ -234,7 +236,7 @@ def purge(
             ts_ms = int(ts.timestamp() * 1000)
 
         cur.execute('SELECT room_id FROM rooms ;')
-        all_rooms = {row[0] for row in cur}
+        all_rooms = {row for row, in cur}
 
         for room_id in all_rooms:
             # no --keep-min-msgs nor --keep-newer, purge everything
@@ -261,7 +263,7 @@ def purge(
                 },
             )
             if cur.rowcount:
-                event_id = cur.fetchone()[0]
+                event_id, = cur.fetchone()
                 wait_and_purge_room(room_id, event_id)
             # else: room doesn't have messages eligible for purging, skip
 
