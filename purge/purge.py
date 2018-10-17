@@ -185,6 +185,7 @@ def purge(
                     'UPDATE users SET admin=1 WHERE name = %s ;',
                     (admin_user,),
                 )
+                db.commit()
             elif not is_admin:
                 raise RuntimeError(f'User {admin_user!r} is not an admin. See --admin-set option')
 
@@ -204,17 +205,17 @@ def purge(
             """
             while len(purges) >= (parallel_purges if room_id else 1):
                 # wait and clear completed purges
-                time.sleep(parallel_purges)  # also use # of parallel purges as wait
+                time.sleep(1)
                 for _room_id, purge_id in list(purges.items()):
                     response = session.get(
                         urljoin(
                             server,
-                            '/_matrix/client/r0/admin/purge_history/' + quote(purge_id),
+                            '/_matrix/client/r0/admin/purge_history_status/' + quote(purge_id),
                         ),
                         params={'access_token': admin_access_token},
                     )
                     if response.status_code != 200 or response.json().get('status') != 'active':
-                        click.echo(f'Finished purge: room {_room_id!r}, purge {purge_id!r}')
+                        click.secho(f'Finished purge: room {_room_id!r}, purge {purge_id!r}')
                         purges.pop(_room_id)
 
             if not room_id:
@@ -249,6 +250,7 @@ def purge(
         cur.execute('SELECT room_id FROM rooms ;')
         all_rooms = {row for row, in cur}
 
+        click.secho(f'Processing {len(all_rooms)} rooms')
         for room_id in all_rooms:
             # no --keep-min-msgs nor --keep-newer, purge everything
             if not keep_newer and not keep_min_msgs:
@@ -263,7 +265,7 @@ def purge(
                     FROM events
                     WHERE room_id=%(room_id)s AND type='m.room.message'
                     ORDER BY received_ts DESC
-                ) t WHERE 1
+                ) t WHERE true
                 {'AND received_ts < %(ts_ms)s' if keep_newer else ''}
                 {'AND msg_count_above > %(keep_min_msgs)s' if keep_min_msgs else ''}
                 LIMIT 1 ;""",
@@ -281,12 +283,12 @@ def purge(
         wait_and_purge_room(None)
 
     if post_sql:
-        click.echo(f'Running {post_sql.name!r}')
+        click.secho(f'Running {post_sql.name!r}')
         with psycopg2.connect(db_uri) as db, db.cursor() as cur:
             cur.execute(post_sql.read())
-            click.echo(f'Results {cur.rowcount}:')
+            click.secho(f'Results {cur.rowcount}:')
             for i, row in enumerate(cur):
-                click.echo(f'{i}: {row}')
+                click.secho(f'{i}: {row}')
 
 
 if __name__ == '__main__':
