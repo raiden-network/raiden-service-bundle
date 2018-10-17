@@ -1,5 +1,6 @@
 import os
 import click
+import json
 import requests
 import psycopg2
 import datetime
@@ -7,6 +8,7 @@ import time
 from eth_keyfile import extract_key_from_keyfile
 from eth_utils import keccak
 from eth_keys import keys
+from operator import itemgetter
 from urllib.parse import urlparse, urljoin, quote
 
 
@@ -58,10 +60,10 @@ def eth_sign_hash(data: bytes) -> bytes:
 )
 @click.option(
     '--admin-access-token-file',
-    default='./token.txt',
+    default='./admin_access.json',
     show_default=True,
     type=click.Path(dir_okay=False, writable=True),
-    help='File to retrieve and persist admin access token.',
+    help='JSON file to retrieve and persist "admin_user" and "admin_access_token".',
 )
 @click.option(
     '--admin-set/--no-admin-set',
@@ -151,50 +153,57 @@ def purge(
             click.secho(f'PK to Matrix Password: {admin_password}')
             return
 
+    if admin_user:
+        if not admin_password:
+            admin_password = click.prompt(
+                'Admin user password',
+                default='',
+                hide_input=True,
+            )
+        response = session.post(
+            urljoin(server, '/_matrix/client/r0/login'),
+            json={
+                'type': 'm.login.password',
+                'user': admin_user,
+                'password': admin_password,
+            },
+        )
+        assert response.status_code == 200, f'{response!r} => {response.text!r}'
+        admin_access_token = response.json()['access_token']
+        with open(admin_access_token_file, 'w') as fo:
+            json.dump({
+                'admin_user': admin_user,
+                'admin_access_token': admin_access_token,
+            }, fo, indent=2)
+
+    elif os.path.isfile(admin_access_token_file):
+        with open(admin_access_token_file, 'r') as fo:
+            admin_user, admin_access_token = itemgetter(
+                'admin_user',
+                'admin_access_token',
+            )(json.load(fo))
+
+    else:
+        raise RuntimeError('No admin_user nor previous access token found')
+
     with psycopg2.connect(db_uri) as db, db.cursor() as cur:
 
-        if admin_user:
-            if not admin_password:
-                admin_password = click.prompt(
-                    'Admin user password',
-                    default='',
-                    hide_input=True,
-                )
-            response = session.post(
-                urljoin(server, '/_matrix/client/r0/login'),
-                json={
-                    'type': 'm.login.password',
-                    'user': admin_user,
-                    'password': admin_password,
-                },
-            ).json()
-            admin_access_token = response['access_token']
-            with open(admin_access_token_file, 'w') as fo:
-                fo.write(admin_access_token)
-
-            # set user as admin in database if needed
+        # set user as admin in database if needed
+        cur.execute(
+            'SELECT admin FROM users WHERE name = %s ;',
+            (admin_user,),
+        )
+        if not cur.rowcount:
+            raise RuntimeError(f'User {admin_user!r} not found')
+        is_admin, = cur.fetchone()
+        if admin_set and not is_admin:
             cur.execute(
-                'SELECT admin FROM users WHERE name = %s ;',
+                'UPDATE users SET admin=1 WHERE name = %s ;',
                 (admin_user,),
             )
-            if not cur.rowcount:
-                raise RuntimeError(f'User {admin_user!r} not found')
-            is_admin, = cur.fetchone()
-            if admin_set and not is_admin:
-                cur.execute(
-                    'UPDATE users SET admin=1 WHERE name = %s ;',
-                    (admin_user,),
-                )
-                db.commit()
-            elif not is_admin:
-                raise RuntimeError(f'User {admin_user!r} is not an admin. See --admin-set option')
-
-        elif os.path.isfile(admin_access_token_file):
-            with open(admin_access_token_file, 'r') as fo:
-                admin_access_token = fo.readline().strip()
-
-        else:
-            raise RuntimeError('No admin_user nor previous access token found')
+            db.commit()
+        elif not is_admin:
+            raise RuntimeError(f'User {admin_user!r} is not an admin. See --admin-set option')
 
         purges = dict()
         def wait_and_purge_room(room_id=None, event_id=None):
