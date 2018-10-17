@@ -5,7 +5,7 @@ import psycopg2
 import datetime
 import time
 from eth_keyfile import extract_key_from_keyfile
-from eth_utils import keccak, encode_hex
+from eth_utils import keccak
 from eth_keys import keys
 from urllib.parse import urlparse, urljoin, quote
 
@@ -42,6 +42,12 @@ def eth_sign_hash(data: bytes) -> bytes:
 @click.option(
     '--admin-private-key-password',
     help='Admin ETH JSON private key file password',
+)
+@click.option(
+    '--admin-private-key-print-only',
+    is_flag=True,
+    flag_value=True,
+    help='Print user and password derived from private key and exit',
 )
 @click.option(
     '--server-name',
@@ -98,6 +104,7 @@ def purge(
         admin_password,
         admin_private_key,
         admin_private_key_password,
+        admin_private_key_print_only,
         server_name,
         admin_access_token_file,
         admin_set,
@@ -115,12 +122,6 @@ def purge(
     e.g.: export MATRIX_KEEP_MIN_MSGS=100
     """
     session = requests.Session()
-
-    if not keep_newer and not keep_min_msgs:
-        click.confirm(
-            'No --keep-newer nor --keep-min-msgs option provided. Purge all history?',
-            abort=True,
-        )
 
     # no --server-name, defaults to server hostname
     if not server_name:
@@ -144,7 +145,11 @@ def purge(
         # username is eth address lowercase
         admin_user = f'@{pk.public_key.to_address()}:{server_name}'
         # password is full user_id signed with key, with eth_sign prefix
-        admin_password = encode_hex(pk.sign_msg_hash(eth_sign_hash(admin_user)).signature_bytes)
+        admin_password = str(pk.sign_msg_hash(eth_sign_hash(server_name.encode())))
+        if admin_private_key_print_only:
+            click.secho(f'PK to Matrix User:     {admin_user}')
+            click.secho(f'PK to Matrix Password: {admin_password}')
+            return
 
     with psycopg2.connect(db_uri) as db, db.cursor() as cur:
 
@@ -229,6 +234,12 @@ def purge(
                 purge_id = response.json()['purge_id']
                 purges[room_id] = purge_id
                 return purge_id
+
+        if not keep_newer and not keep_min_msgs:
+            click.confirm(
+                'No --keep-newer nor --keep-min-msgs option provided. Purge all history?',
+                abort=True,
+            )
 
         ts_ms = None
         if keep_newer:
