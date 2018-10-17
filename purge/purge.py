@@ -5,7 +5,7 @@ import requests
 import psycopg2
 import datetime
 import time
-from eth_keyfile import extract_key_from_keyfile
+from eth_keyfile import extract_key_from_keyfile, create_keyfile_json
 from eth_utils import keccak
 from eth_keys import keys
 from operator import itemgetter
@@ -26,6 +26,16 @@ def eth_sign_hash(data: bytes) -> bytes:
 @click.argument('db_uri')
 @click.argument('server')
 @click.option(
+    '--admin-access-token-file',
+    default='./admin_access.json',
+    show_default=True,
+    type=click.Path(dir_okay=False, writable=True),
+    help=(
+        'JSON file to retrieve and persist "admin_user" and "admin_access_token". '
+        'If present, any other --admin-* option is ignored and these credentials are used.'
+    ),
+)
+@click.option(
     '--admin-user',
     help='Full admin user_id. e.g.: @username:server_hostname.com',
 )
@@ -35,15 +45,23 @@ def eth_sign_hash(data: bytes) -> bytes:
 )
 @click.option(
     '--admin-private-key',
-    type=click.Path(exists=True, dir_okay=False),
-    help=(
-        'Admin ETH JSON private key file to derive admin user and password from. '
-        'Replaces --admin-user if set.'
-    ),
+    type=click.Path(dir_okay=False),
+    default='admin_key.json',
+    help='Admin ETH JSON private key file to derive admin user and password from.',
 )
 @click.option(
     '--admin-private-key-password',
-    help='Admin ETH JSON private key file password',
+    help='Admin ETH JSON private key file password. Prompted if needed and not provided.',
+)
+@click.option(
+    '--admin-private-key-generate',
+    is_flag=True,
+    flag_value=True,
+    help=(
+        'Generates a private keyfile, encrypted with password, if one does not exist. '
+        'This key shouldn\'t be used for transactions, and is only meant to '
+        'ease generating a valid ethereum/matrix admin user.'
+    ),
 )
 @click.option(
     '--admin-private-key-print-only',
@@ -57,13 +75,6 @@ def eth_sign_hash(data: bytes) -> bytes:
         'Custom Matrix server name to be used to calculate user_id from private key. '
         'Defaults to server\'s hostname'
     ),
-)
-@click.option(
-    '--admin-access-token-file',
-    default='./admin_access.json',
-    show_default=True,
-    type=click.Path(dir_okay=False, writable=True),
-    help='JSON file to retrieve and persist "admin_user" and "admin_access_token".',
 )
 @click.option(
     '--admin-set/--no-admin-set',
@@ -102,13 +113,14 @@ def eth_sign_hash(data: bytes) -> bytes:
 def purge(
         db_uri,
         server,
+        admin_access_token_file,
         admin_user,
         admin_password,
         admin_private_key,
         admin_private_key_password,
+        admin_private_key_generate,
         admin_private_key_print_only,
         server_name,
-        admin_access_token_file,
         admin_set,
         keep_newer,
         keep_min_msgs,
@@ -129,62 +141,76 @@ def purge(
     if not server_name:
         server_name = urlparse(server).hostname
 
-    # derive admin_user and admin_password from private key
-    # takes precedence over --admin-user/--admin-password
-    if admin_private_key:
-        if admin_private_key_password is None:
-            admin_private_key_password = click.prompt(
-                'JSON keyfile password',
-                default='',
-                hide_input=True,
-            )
-        pk_bin = extract_key_from_keyfile(
-            admin_private_key,
-            admin_private_key_password.encode(),
-        )
-        pk = keys.PrivateKey(pk_bin)
 
-        # username is eth address lowercase
-        admin_user = f'@{pk.public_key.to_address()}:{server_name}'
-        # password is full user_id signed with key, with eth_sign prefix
-        admin_password = str(pk.sign_msg_hash(eth_sign_hash(server_name.encode())))
-        if admin_private_key_print_only:
-            click.secho(f'PK to Matrix User:     {admin_user}')
-            click.secho(f'PK to Matrix Password: {admin_password}')
-            return
-
-    if admin_user:
-        if not admin_password:
-            admin_password = click.prompt(
-                'Admin user password',
-                default='',
-                hide_input=True,
-            )
-        response = session.post(
-            urljoin(server, '/_matrix/client/r0/login'),
-            json={
-                'type': 'm.login.password',
-                'user': admin_user,
-                'password': admin_password,
-            },
-        )
-        assert response.status_code == 200, f'{response!r} => {response.text!r}'
-        admin_access_token = response.json()['access_token']
-        with open(admin_access_token_file, 'w') as fo:
-            json.dump({
-                'admin_user': admin_user,
-                'admin_access_token': admin_access_token,
-            }, fo, indent=2)
-
-    elif os.path.isfile(admin_access_token_file):
+    if os.path.isfile(admin_access_token_file):
         with open(admin_access_token_file, 'r') as fo:
             admin_user, admin_access_token = itemgetter(
                 'admin_user',
                 'admin_access_token',
             )(json.load(fo))
-
     else:
-        raise RuntimeError('No admin_user nor previous access token found')
+        if not admin_user and not os.path.isfile(admin_private_key) and admin_private_key_generate:
+            if admin_private_key_password is None:
+                admin_private_key_password = click.prompt(
+                    'JSON keyfile password',
+                    default='',
+                    hide_input=True,
+                )
+            with open(admin_private_key, 'w') as fo:
+                json.dump(create_keyfile_json(
+                    os.urandom(32),
+                    admin_private_key_password.encode(),
+                ), fo, indent=2)
+
+        # derive admin_user and admin_password from private key
+        # takes precedence over --admin-user/--admin-password
+        if not admin_user and os.path.isfile(admin_private_key):
+            if admin_private_key_password is None:
+                admin_private_key_password = click.prompt(
+                    'JSON keyfile password',
+                    default='',
+                    hide_input=True,
+                )
+            pk_bin = extract_key_from_keyfile(
+                admin_private_key,
+                admin_private_key_password.encode(),
+            )
+            pk = keys.PrivateKey(pk_bin)
+
+            # username is eth address lowercase
+            admin_user = f'@{pk.public_key.to_address()}:{server_name}'
+            # password is full user_id signed with key, with eth_sign prefix
+            admin_password = str(pk.sign_msg_hash(eth_sign_hash(server_name.encode())))
+            if admin_private_key_print_only:
+                click.secho(f'PK to Matrix User:     {admin_user}')
+                click.secho(f'PK to Matrix Password: {admin_password}')
+                return
+
+        if admin_user:
+            if not admin_password:
+                admin_password = click.prompt(
+                    'Admin user password',
+                    default='',
+                    hide_input=True,
+                )
+            response = session.post(
+                urljoin(server, '/_matrix/client/r0/login'),
+                json={
+                    'type': 'm.login.password',
+                    'user': admin_user,
+                    'password': admin_password,
+                },
+            )
+            assert response.status_code == 200, f'{response!r} => {response.text!r}'
+            admin_access_token = response.json()['access_token']
+            with open(admin_access_token_file, 'w') as fo:
+                json.dump({
+                    'admin_user': admin_user,
+                    'admin_access_token': admin_access_token,
+                }, fo, indent=2)
+
+        else:
+            raise RuntimeError('No admin_user nor previous access token found')
 
     with psycopg2.connect(db_uri) as db, db.cursor() as cur:
 
