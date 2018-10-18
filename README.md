@@ -140,8 +140,6 @@ Minumum recommended for a production setup:
 1. Run `docker-compose build` to build the containers
 1. Run `docker-compose up -d` to start all services
    - The services are configured to automatically restart in case of a crash or reboot
-1. A 'purge' script/service will run once a day, prunning old state from rooms to save disk space,
-   and restarting the ``synapse`` service to fetch an up-to-date whitelist of servers.
 1. Verify the service is up by opening the domain in a browser. You should see the synapse login screen.
 
 ### Submit
@@ -160,6 +158,10 @@ git reset --hard <new-release-tag>
 docker-compose build
 docker-compose up -d
 ```
+## Notes:
+
+ - A 'purge' script/service will run once a day, pruning old state from rooms to save disk space,
+   and restarting the ``synapse`` service to fetch an up-to-date whitelist of servers.
 
 ## Known issues
 
@@ -170,10 +172,10 @@ This will be addressed in future updates.
 
 ### Known servers
 
-The known servers the Raiden clients try to connect to are currently tracked in a file in this 
-repository and also shipped as a hard-coded list with the Raiden client. 
+The known servers the Raiden clients try to connect to are currently tracked in the *.yml files in this repository.
 These lists are used by Raiden clients when the ``--matrix-server=auto`` (default) option is used,
 for automatically selecting a transport server, based on response times.
+We intend to change this in the future to use a decentralized scheme (for example an on-chain registry).
 
 
 ## Contact / Troubleshooting
