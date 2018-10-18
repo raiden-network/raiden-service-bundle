@@ -208,4 +208,6 @@ services:
       - SERVER_NAME
       - MATRIX_ADMIN_PRIVATE_KEY_PASSWORD=""
       - MATRIX_ADMIN_PRIVATE_KEY_GENERATE=1
+      - MATRIX_KEEP_NEWER=15
+      - MATRIX_KEEP_MIN_MSGS=3000
     command: bash purge.sh
