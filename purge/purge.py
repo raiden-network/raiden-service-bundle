@@ -24,8 +24,8 @@ def eth_sign_hash(data: bytes) -> bytes:
 
 
 @click.command()
-@click.argument('db_uri')
-@click.argument('server')
+@click.argument('db_uri', envvar='MATRIX_DB_URI')
+@click.argument('server', envvar='MATRIX_SERVER')
 @click.option(
     '--admin-access-token-file',
     default='./admin_access.json',
