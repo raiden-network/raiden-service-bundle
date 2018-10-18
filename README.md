@@ -140,12 +140,8 @@ Minumum recommended for a production setup:
 1. Run `docker-compose build` to build the containers
 1. Run `docker-compose up -d` to start all services
    - The services are configured to automatically restart in case of a crash or reboot
-1. Add a cron job to regularly (i.e. once a day) restart the `synapse` service in order to pick up new whitelisted federation peers
-   - This will be better automated in future releases
-   - Recommended cron job command:
-     ```
-     docker-compose -f <path-to-compose-file> restart synapse
-     ``` 
+1. A 'purge' script/service will run once a day, prunning old state from rooms to save disk space,
+   and restarting the ``synapse`` service to fetch an up-to-date whitelist of servers.
 1. Verify the service is up by opening the domain in a browser. You should see the synapse login screen.
 
 ### Submit
@@ -176,7 +172,8 @@ This will be addressed in future updates.
 
 The known servers the Raiden clients try to connect to are currently tracked in a file in this 
 repository and also shipped as a hard-coded list with the Raiden client. 
-We intend to change this in the future to use a decentralized scheme (for example an on-chain registry).
+These lists are used by Raiden clients when the ``--matrix-server=auto`` (default) option is used,
+for automatically selecting a transport server, based on response times.
 
 
 ## Contact / Troubleshooting
@@ -186,5 +183,6 @@ or contact us via email at contact@raiden.nework.
 
 ## Changelog
 
+- 2018-10-18 - `2018.8.2` - Purge historic state and restart service, no need for a cron service anymore
 - 2018-08-09 - `2018.8.1` - **Initial public release**
 - 2018-08-02 - `2018.8.0` - **Initial version**
