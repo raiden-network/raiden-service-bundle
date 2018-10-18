@@ -260,7 +260,8 @@ def purge(
                         ),
                         params={'access_token': admin_access_token},
                     )
-                    if response.status_code != 200 or response.json().get('status') != 'active':
+                    assert response.status_code == 200, f'{response!r} => {response.text!r}'
+                    if response.json()['status'] != 'active':
                         click.secho(f'Finished purge: room {_room_id!r}, purge {purge_id!r}')
                         purges.pop(_room_id)
 
