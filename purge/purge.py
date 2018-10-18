@@ -5,6 +5,7 @@ import requests
 import psycopg2
 import datetime
 import time
+import docker
 from eth_keyfile import extract_key_from_keyfile, create_keyfile_json
 from eth_utils import keccak
 from eth_keys import keys
@@ -67,7 +68,7 @@ def eth_sign_hash(data: bytes) -> bytes:
     '--admin-private-key-print-only',
     is_flag=True,
     flag_value=True,
-    help='Print user and password derived from private key and exit',
+    help='Print matrix user and password derived from private key and exit',
 )
 @click.option(
     '--server-name',
@@ -75,6 +76,7 @@ def eth_sign_hash(data: bytes) -> bytes:
         'Custom Matrix server name to be used to calculate user_id from private key. '
         'Defaults to server\'s hostname'
     ),
+    envvar='SERVER_NAME',
 )
 @click.option(
     '--admin-set/--no-admin-set',
@@ -110,6 +112,10 @@ def eth_sign_hash(data: bytes) -> bytes:
         'Useful to run cleanup scripts, like "synapse_janitor.sql".'
     ),
 )
+@click.option(
+    '--docker-restart-label',
+    help='If set, search all containers with given label and, if they\'re running, restart them',
+)
 def purge(
         db_uri,
         server,
@@ -126,6 +132,7 @@ def purge(
         keep_min_msgs,
         parallel_purges,
         post_sql,
+        docker_restart_label,
 ):
     """ Purge historic data from rooms in a synapse server
 
@@ -141,7 +148,7 @@ def purge(
     if not server_name:
         server_name = urlparse(server).hostname
 
-
+    # admin_access_token_file has priority over everything else, to avoid re-logins
     if os.path.isfile(admin_access_token_file):
         with open(admin_access_token_file, 'r') as fo:
             admin_user, admin_access_token = itemgetter(
@@ -163,7 +170,6 @@ def purge(
                 ), fo, indent=2)
 
         # derive admin_user and admin_password from private key
-        # takes precedence over --admin-user/--admin-password
         if not admin_user and os.path.isfile(admin_private_key):
             if admin_private_key_password is None:
                 admin_private_key_password = click.prompt(
@@ -177,9 +183,9 @@ def purge(
             )
             pk = keys.PrivateKey(pk_bin)
 
-            # username is eth address lowercase
+            # username is 0x-prefixed lowercase eth address
             admin_user = f'@{pk.public_key.to_address()}:{server_name}'
-            # password is full user_id signed with key, with eth_sign prefix
+            # password is server_name signed with key, with eth_sign prefixed hash
             admin_password = str(pk.sign_msg_hash(eth_sign_hash(server_name.encode())))
             if admin_private_key_print_only:
                 click.secho(f'PK to Matrix User:     {admin_user}')
@@ -211,6 +217,11 @@ def purge(
 
         else:
             raise RuntimeError('No admin_user nor previous access token found')
+
+    if admin_private_key_print_only:
+        # only hit if --admin-private-key-print-only passed, but an access token or admin user
+        # was already present, or no --admin-private-key file or no --admin-private-key-generate
+        return
 
     with psycopg2.connect(db_uri) as db, db.cursor() as cur:
 
@@ -324,6 +335,13 @@ def purge(
             click.secho(f'Results {cur.rowcount}:')
             for i, row in enumerate(cur):
                 click.secho(f'{i}: {row}')
+
+    if docker_restart_label:
+        client = docker.from_env()
+        for container in client.containers.list():
+            if container.attrs['State']['Status'] == 'running' and\
+                    container.attrs['Config']['Labels'].get(docker_restart_label):
+                container.restart(timeout=30)
 
 
 if __name__ == '__main__':
