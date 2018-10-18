@@ -30,6 +30,7 @@ services:
       - "traefik.metrics.frontend.rule=Host:metrics.${SERVER_NAME}"
       - "traefik.metrics.frontend.whiteList.sourceRange=${CIDR_ALLOW_METRICS}"
       - "traefik.metrics.frontend.whiteList.useXForwardedFor=false"
+      - "purge_restart_container=true"
 
   synchrotron:
     image: raiden-network/synapse
@@ -188,3 +189,23 @@ services:
       - "traefik.port=8080"
       - "traefik.frontend.rule=Host:proxy.${SERVER_NAME}"
       - "traefik.frontend.whiteList.sourceRange=${CIDR_ALLOW_PROXY}"
+
+  purger:
+    image: python:3
+    restart: unless-stopped
+    volumes:
+      - ./purge:/app
+      - /var/run/docker.sock:/var/run/docker.sock
+    working_dir: /app
+    depends_on:
+      - synapse
+      - db
+    environment:
+      - PURGE_SLEEP_UNTIL="05:00:00"
+      - MATRIX_DOCKER_RESTART_LABEL="purge_restart_container"
+      - MATRIX_DB_URI="postgres://postgres@db:5432/synapse"
+      - MATRIX_SERVER="http://synapse:8448"
+      - SERVER_NAME
+      - MATRIX_ADMIN_PRIVATE_KEY_PASSWORD=""
+      - MATRIX_ADMIN_PRIVATE_KEY_GENERATE=1
+    command: bash purge.sh
