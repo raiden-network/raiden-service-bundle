@@ -1,5 +1,4 @@
 ## This file will be read by the Raiden client to discover the known Matrix servers when connecting to test networks
-
-- transport01.raiden.network
-- transport02.raiden.network
-- transport03.raiden.network
+  - transport01.raiden.network
+  - transport02.raiden.network
+  - transport03.raiden.network
