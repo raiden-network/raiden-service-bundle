@@ -6,7 +6,7 @@ services:
     build:
       context: build/synapse
       args:
-        SYNAPSE_VERSION: v0.33.0
+        SYNAPSE_VERSION: v0.33.7
     image: raiden-network/synapse
     restart: always
     ports:
