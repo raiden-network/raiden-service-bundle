@@ -5,7 +5,7 @@
 This repository contains the documentation and configuration necessary to run a 
 Raiden Transport Matrix server.
 
-**Current release:** [2018.8.1](https://github.com/raiden-network/raiden-transport/tree/2018.8.1) 
+**Current release:** [2018.10.0](https://github.com/raiden-network/raiden-transport/tree/2018.10.0) 
 
 ## Table of Contents
 
@@ -103,8 +103,8 @@ Minumum recommended for a production setup:
 
 ### Software
 
-- Docker >= 17.06
-- docker-compose >= 1.16.0
+- Docker >= 17.12
+- docker-compose >= 1.21.0
 
 ### Other
 
@@ -127,11 +127,11 @@ Minumum recommended for a production setup:
 
 ### Installing
 
-1. Clone the [current release version of this repository](https://github.com/raiden-network/raiden-transport/tree/2018.8.1) 
+1. Clone the [current release version of this repository](https://github.com/raiden-network/raiden-transport/tree/2018.10.0) 
    to a suitable location on the server:
    
    ```shell
-   git clone -b 2018.8.1 https://github.com/raiden-network/raiden-transport.git
+   git clone -b 2018.10.0 https://github.com/raiden-network/raiden-transport.git
    ```
 1. Copy `.env.template` to `.env` and modify the values to fit your setup (see inline comments for details)
    - We would appreciate it if you allow us access to the monitoring interfaces 
@@ -185,8 +185,10 @@ or contact us via email at contact@raiden.nework.
 
 ## Changelog
 
-- 2018-10-18 - `2018.10.0` - **Maintenence release** 
+- 2018-10-19 - `2018.10.0` - **Maintenence release** 
   - Add new servers to known list
+  - Upgrade Synapse to 0.33.7
   - Automatically purge historic state and restart service once a day, removing the need for an external cron service
+  - Updated minimum docker and docker-compose version requirements
 - 2018-08-09 - `2018.8.1` - **Initial public release**
 - 2018-08-02 - `2018.8.0` - **Initial version**
