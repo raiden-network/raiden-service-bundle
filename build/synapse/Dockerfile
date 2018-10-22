@@ -7,7 +7,7 @@ RUN \
     virtualenv /synapse-venv && \
     /synapse-venv/bin/pip install https://github.com/matrix-org/synapse/tarball/${SYNAPSE_VERSION}
 
-RUN /synapse-venv/bin/pip install --no-binary psycopg2 psycopg2 coincurve pycryptodome
+RUN /synapse-venv/bin/pip install --no-binary psycopg2 coincurve pycryptodome
 ADD https://github.com/raiden-network/raiden/raw/master/tools/eth_auth_provider.py2 /synapse-venv/lib/python2.7/site-packages/eth_auth_provider.py
 
 ADD synapse-entrypoint.sh /bin/
