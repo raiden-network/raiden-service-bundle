@@ -1,15 +1,15 @@
+# -*- coding: utf-8 -*-
 import os
-from pathlib import Path
+import codecs
 import random
 import string
-import urllib.request
-from urllib.error import URLError
+import urllib2
 
 
-PATH_CONFIG = Path('/config/synapse.yaml')
-PATH_CONFIG_TEMPLATE = Path('/config/synapse.template.yaml')
-PATH_MACAROON_KEY = Path('/data/keys/macaroon.key')
-PATH_KNOWN_FEDERATION_SERVERS = Path('/data/known_federation_servers.yaml')
+PATH_CONFIG = '/config/synapse.yaml'
+PATH_CONFIG_TEMPLATE = '/config/synapse.template.yaml'
+PATH_MACAROON_KEY = '/data/keys/macaroon.key'
+PATH_KNOWN_FEDERATION_SERVERS = '/data/known_federation_servers.yaml'
 
 URL_KNOWN_FEDERATION_SERVERS_DEFAULT = (
     'https://raw.githubusercontent.com/raiden-network/raiden-transport/master/known_servers.yaml'
@@ -17,10 +17,15 @@ URL_KNOWN_FEDERATION_SERVERS_DEFAULT = (
 
 
 def get_macaroon_key():
-    if not PATH_MACAROON_KEY.is_file():
+    if not os.path.isfile(PATH_MACAROON_KEY):
         alphabet = string.digits + string.ascii_letters + '!@#$%^&*()_-=+{}[]'
-        PATH_MACAROON_KEY.write_text(''.join(random.choice(alphabet) for _ in range(30)))
-    return PATH_MACAROON_KEY.read_text()
+        macaroon = ''.join(random.choice(alphabet) for _ in range(30))
+        with codecs.open(PATH_MACAROON_KEY, 'w', encoding='utf-8') as fo:
+            fo.write(macaroon)
+    else:
+        with codecs.open(PATH_MACAROON_KEY, 'r', encoding='utf-8') as fi:
+            macaroon = fi.read()
+    return macaroon
 
 
 def get_known_federation_servers():
@@ -33,15 +38,17 @@ def get_known_federation_servers():
         url_known_federation_servers = URL_KNOWN_FEDERATION_SERVERS_DEFAULT
     print('Fetching known federation servers from:', url_known_federation_servers)
     try:
-        resp = urllib.request.urlopen(url_known_federation_servers)
-        if 199 < resp.status < 300:
-            PATH_KNOWN_FEDERATION_SERVERS.write_text(resp.read().decode())
+        resp = urllib2.urlopen(url_known_federation_servers)
+        if 200 <= resp.code < 300:
+            with codecs.open(PATH_KNOWN_FEDERATION_SERVERS, 'w', encoding='utf-8') as fo:
+                fo.write(resp.read().decode())
         else:
-            print('Error fetching known servers list:', resp.status, resp.read().decode())
-    except URLError as ex:
+            print('Error fetching known servers list:', resp.code, resp.read().decode())
+    except urllib2.URLError as ex:
         print('Error fetching known servers list', ex)
-    if PATH_KNOWN_FEDERATION_SERVERS.is_file():
-        return PATH_KNOWN_FEDERATION_SERVERS.read_text()
+    if os.path.isfile(PATH_KNOWN_FEDERATION_SERVERS):
+        with codecs.open(PATH_KNOWN_FEDERATION_SERVERS, 'r', encoding='utf-8') as fi:
+            return fi.read()
     return ''
 
 
@@ -51,10 +58,12 @@ def main():
         'SERVER_NAME': os.environ['SERVER_NAME'],
         'KNOWN_SERVERS': get_known_federation_servers(),
     }
-    template_content = PATH_CONFIG_TEMPLATE.read_text()
-    PATH_CONFIG.write_text(
-        string.Template(template_content).substitute(**template_vars)
-    )
+    with codecs.open(PATH_CONFIG_TEMPLATE, 'r', encoding='utf-8') as fi:
+        template_content = fi.read()
+    with codecs.open(PATH_CONFIG, 'w', encoding='utf-8') as fo:
+        fo.write(
+            string.Template(template_content).substitute(**template_vars),
+        )
 
 
 if __name__ == "__main__":
