@@ -7,7 +7,7 @@ import datetime
 import time
 import docker
 from eth_keyfile import extract_key_from_keyfile, create_keyfile_json
-from eth_utils import keccak
+from eth_utils import keccak, encode_hex
 from eth_keys import keys
 from operator import itemgetter
 from urllib.parse import urlparse, urljoin, quote
@@ -186,7 +186,11 @@ def purge(
             # username is 0x-prefixed lowercase eth address
             admin_user = f'@{pk.public_key.to_address()}:{server_name}'
             # password is server_name signed with key, with eth_sign prefixed hash
-            admin_password = str(pk.sign_msg_hash(eth_sign_hash(server_name.encode())))
+            admin_password_bin = pk.sign_msg_hash(eth_sign_hash(server_name.encode())).to_bytes()
+            admin_password = encode_hex(
+                admin_password_bin[:-1] +
+                bytes([admin_password_bin[-1] + 27])  # v += 27
+            )
             if admin_private_key_print_only:
                 click.secho(f'PK to Matrix User:     {admin_user}')
                 click.secho(f'PK to Matrix Password: {admin_password}')
