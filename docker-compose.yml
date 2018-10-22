@@ -202,12 +202,12 @@ services:
       - synapse
       - db
     environment:
-      - PURGE_SLEEP_UNTIL="05:00:00"
-      - MATRIX_DOCKER_RESTART_LABEL="purge_restart_container"
-      - MATRIX_DB_URI="postgres://postgres@db:5432/synapse"
-      - MATRIX_SERVER="http://synapse:8448"
+      - PURGE_SLEEP_UNTIL=05:00:00
+      - MATRIX_DOCKER_RESTART_LABEL=purge_restart_container
+      - MATRIX_DB_URI=postgres://postgres@db:5432/synapse
+      - MATRIX_SERVER=http://synapse:8448
       - SERVER_NAME
-      - MATRIX_ADMIN_PRIVATE_KEY_PASSWORD=""
+      - MATRIX_ADMIN_PRIVATE_KEY_PASSWORD=
       - MATRIX_ADMIN_PRIVATE_KEY_GENERATE=1
       - MATRIX_KEEP_NEWER=15
       - MATRIX_KEEP_MIN_MSGS=3000
