@@ -8,7 +8,7 @@ services:
       args:
         SYNAPSE_VERSION: v0.33.7
     image: raiden-network/synapse
-    restart: on-failure
+    restart: always
     ports:
       - 8448:8448
     volumes:
@@ -35,7 +35,7 @@ services:
 
   synchrotron:
     image: raiden-network/synapse
-    restart: on-failure
+    restart: always
     volumes:
       - ./config/synapse:/config
       - ${DATA_DIR:-./data}/synapse:/data
@@ -55,7 +55,7 @@ services:
 
 #  federation_reader:
 #    image: raiden-network/synapse
-#    restart: on-failure
+#    restart: always
 #    volumes:
 #      - ./config/synapse:/config
 #      - ${DATA_DIR:-./data}/synapse:/data
@@ -76,7 +76,7 @@ services:
 #
 #  federation_sender:
 #    image: raiden-network/synapse
-#    restart: on-failure
+#    restart: always
 #    volumes:
 #      - ./config/synapse:/config
 #      - ${DATA_DIR:-./data}/synapse:/data
@@ -91,7 +91,7 @@ services:
 #
   client_reader:
     image: raiden-network/synapse
-    restart: on-failure
+    restart: always
     volumes:
       - ./config/synapse:/config
       - ${DATA_DIR:-./data}/synapse:/data
@@ -110,7 +110,7 @@ services:
 
   user_dir:
     image: raiden-network/synapse
-    restart: on-failure
+    restart: always
     volumes:
       - ./config/synapse:/config
       - ${DATA_DIR:-./data}/synapse:/data
@@ -129,7 +129,7 @@ services:
 
   event_creator:
     image: raiden-network/synapse
-    restart: on-failure
+    restart: always
     volumes:
       - ./config/synapse:/config
       - ${DATA_DIR:-./data}/synapse:/data
@@ -150,7 +150,7 @@ services:
   db:
     build:
       context: build/db
-    restart: on-failure
+    restart: always
     volumes:
       - ${DATA_DIR:-./data}/db:/var/lib/postgresql/data
     healthcheck:
@@ -159,7 +159,7 @@ services:
 #  cert_extractor:
 #    build:
 #      context: build/extract-certs
-#    restart: on-failure
+#    restart: always
 #    volumes:
 #      - ${DATA_DIR:-./data}/traefik:/in:ro
 #      - ${DATA_DIR:-./data}/synapse:/out
@@ -170,7 +170,7 @@ services:
 
   traefik:
     image: traefik:1.7
-    restart: on-failure
+    restart: always
     ports:
       - 80:80
       - 443:443
@@ -193,7 +193,7 @@ services:
 
   purger:
     image: python:3
-    restart: on-failure
+    restart: always
     volumes:
       - ./purge:/app
       - /var/run/docker.sock:/var/run/docker.sock
