@@ -197,7 +197,7 @@ or contact us via email at contact@raiden.nework.
 
 ## Licenses
 
-The code and documentation in this repository are released under the [MIT license](LICENSE)
+The code and documentation in this repository are released under the [MIT license](LICENSE).
 
 This repository contains instructions to install third party software, those are licensed as follows:
 
