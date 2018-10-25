@@ -183,6 +183,7 @@ We intend to change this in the future to use a decentralized scheme (for exampl
 To report issues or request help with the setup please [open an issue](https://github.com/raiden-network/raiden-transport/issues/new)
 or contact us via email at contact@raiden.nework.
 
+
 ## Changelog
 
 - 2018-10-19 - `2018.10.0` - **Maintenence release** 
@@ -192,3 +193,14 @@ or contact us via email at contact@raiden.nework.
   - Updated minimum docker and docker-compose version requirements
 - 2018-08-09 - `2018.8.1` - **Initial public release**
 - 2018-08-02 - `2018.8.0` - **Initial version**
+
+
+## Licenses
+
+The code and documentation in this repository are released under the [MIT license](LICENSE)
+
+This repository contains instructions to install third party software, those are licensed as follows:
+
+- [Traefik](https://github.com/containous/traefik): [MIT](https://github.com/containous/traefik/blob/6a55772cda1684546a6a5456b6847e0f9b3df44d/LICENSE.md)
+- [Synapse](https://github.com/matrix-org/synapse): [Apache 2.0](https://github.com/matrix-org/synapse/blob/047ac0cbba25ccffb93d92b46254a58f48ddaf9c/LICENSE)
+- [PostgreSQL](https://www.postgresql.org): [PostgreSQL License](https://www.postgresql.org/about/licence/)
