@@ -199,7 +199,7 @@ or contact us via email at contact@raiden.nework.
 
 The code and documentation in this repository are released under the [MIT license](LICENSE).
 
-This repository contains instructions to install third party software, those are licensed as follows:
+This repository contains instructions to install third party software. Those are licensed as follows:
 
 - [Traefik](https://github.com/containous/traefik): [MIT](https://github.com/containous/traefik/blob/6a55772cda1684546a6a5456b6847e0f9b3df44d/LICENSE.md)
 - [Synapse](https://github.com/matrix-org/synapse): [Apache 2.0](https://github.com/matrix-org/synapse/blob/047ac0cbba25ccffb93d92b46254a58f48ddaf9c/LICENSE)
