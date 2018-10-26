@@ -142,211 +142,219 @@ def purge(
     All option can be passed through uppercase environment variables prefixed with 'MATRIX_'
     e.g.: export MATRIX_KEEP_MIN_MSGS=100
     """
-    session = requests.Session()
+    try:
+        session = requests.Session()
 
-    # no --server-name, defaults to server hostname
-    if not server_name:
-        server_name = urlparse(server).hostname
+        # no --server-name, defaults to server hostname
+        if not server_name:
+            server_name = urlparse(server).hostname
 
-    # admin_access_token_file has priority over everything else, to avoid re-logins
-    if os.path.isfile(admin_access_token_file):
-        with open(admin_access_token_file, 'r') as fo:
-            admin_user, admin_access_token = itemgetter(
-                'admin_user',
-                'admin_access_token',
-            )(json.load(fo))
-    else:
-        if not admin_user and not os.path.isfile(admin_private_key) and admin_private_key_generate:
-            if admin_private_key_password is None:
-                admin_private_key_password = click.prompt(
-                    'JSON keyfile password',
-                    default='',
-                    hide_input=True,
-                )
-            with open(admin_private_key, 'w') as fo:
-                json.dump(create_keyfile_json(
-                    os.urandom(32),
-                    admin_private_key_password.encode(),
-                ), fo, indent=2)
-
-        # derive admin_user and admin_password from private key
-        if not admin_user and os.path.isfile(admin_private_key):
-            if admin_private_key_password is None:
-                admin_private_key_password = click.prompt(
-                    'JSON keyfile password',
-                    default='',
-                    hide_input=True,
-                )
-            pk_bin = extract_key_from_keyfile(
-                admin_private_key,
-                admin_private_key_password.encode(),
-            )
-            pk = keys.PrivateKey(pk_bin)
-
-            # username is 0x-prefixed lowercase eth address
-            admin_user = f'@{pk.public_key.to_address()}:{server_name}'
-            # password is server_name signed with key, with eth_sign prefixed hash
-            admin_password_bin = pk.sign_msg_hash(eth_sign_hash(server_name.encode())).to_bytes()
-            admin_password = encode_hex(
-                admin_password_bin[:-1] +
-                bytes([admin_password_bin[-1] + 27])  # v += 27
-            )
-            if admin_private_key_print_only:
-                click.secho(f'PK to Matrix User:     {admin_user}')
-                click.secho(f'PK to Matrix Password: {admin_password}')
-                return
-
-        if admin_user:
-            if not admin_password:
-                admin_password = click.prompt(
-                    'Admin user password',
-                    default='',
-                    hide_input=True,
-                )
-            response = session.post(
-                urljoin(server, '/_matrix/client/r0/login'),
-                json={
-                    'type': 'm.login.password',
-                    'user': admin_user,
-                    'password': admin_password,
-                },
-            )
-            assert response.status_code == 200, f'{response!r} => {response.text!r}'
-            admin_access_token = response.json()['access_token']
-            with open(admin_access_token_file, 'w') as fo:
-                json.dump({
-                    'admin_user': admin_user,
-                    'admin_access_token': admin_access_token,
-                }, fo, indent=2)
-
+        # admin_access_token_file has priority over everything else, to avoid re-logins
+        if os.path.isfile(admin_access_token_file):
+            with open(admin_access_token_file, 'r') as fo:
+                admin_user, admin_access_token = itemgetter(
+                    'admin_user',
+                    'admin_access_token',
+                )(json.load(fo))
         else:
-            raise RuntimeError('No admin_user nor previous access token found')
+            if (
+                    not admin_user and
+                    not os.path.isfile(admin_private_key) and
+                    admin_private_key_generate
+            ):
+                if admin_private_key_password is None:
+                    admin_private_key_password = click.prompt(
+                        'JSON keyfile password',
+                        default='',
+                        hide_input=True,
+                    )
+                with open(admin_private_key, 'w') as fo:
+                    json.dump(create_keyfile_json(
+                        os.urandom(32),
+                        admin_private_key_password.encode(),
+                    ), fo, indent=2)
 
-    if admin_private_key_print_only:
-        # only hit if --admin-private-key-print-only passed, but an access token or admin user
-        # was already present, or no --admin-private-key file or no --admin-private-key-generate
-        return
+            # derive admin_user and admin_password from private key
+            if not admin_user and os.path.isfile(admin_private_key):
+                if admin_private_key_password is None:
+                    admin_private_key_password = click.prompt(
+                        'JSON keyfile password',
+                        default='',
+                        hide_input=True,
+                    )
+                pk_bin = extract_key_from_keyfile(
+                    admin_private_key,
+                    admin_private_key_password.encode(),
+                )
+                pk = keys.PrivateKey(pk_bin)
 
-    with psycopg2.connect(db_uri) as db, db.cursor() as cur:
+                # username is 0x-prefixed lowercase eth address
+                admin_user = f'@{pk.public_key.to_address()}:{server_name}'
+                # password is server_name signed with key, with eth_sign prefixed hash
+                admin_password_bin = pk.sign_msg_hash(
+                    eth_sign_hash(server_name.encode()),
+                ).to_bytes()
+                admin_password = encode_hex(
+                    admin_password_bin[:-1] +
+                    bytes([admin_password_bin[-1] + 27])  # v += 27
+                )
+                if admin_private_key_print_only:
+                    click.secho(f'PK to Matrix User:     {admin_user}')
+                    click.secho(f'PK to Matrix Password: {admin_password}')
+                    return
 
-        # set user as admin in database if needed
-        cur.execute(
-            'SELECT admin FROM users WHERE name = %s ;',
-            (admin_user,),
-        )
-        if not cur.rowcount:
-            raise RuntimeError(f'User {admin_user!r} not found')
-        is_admin, = cur.fetchone()
-        if admin_set and not is_admin:
+            if admin_user:
+                if not admin_password:
+                    admin_password = click.prompt(
+                        'Admin user password',
+                        default='',
+                        hide_input=True,
+                    )
+                response = session.post(
+                    urljoin(server, '/_matrix/client/r0/login'),
+                    json={
+                        'type': 'm.login.password',
+                        'user': admin_user,
+                        'password': admin_password,
+                    },
+                )
+                assert response.status_code == 200, f'{response!r} => {response.text!r}'
+                admin_access_token = response.json()['access_token']
+                with open(admin_access_token_file, 'w') as fo:
+                    json.dump({
+                        'admin_user': admin_user,
+                        'admin_access_token': admin_access_token,
+                    }, fo, indent=2)
+
+            else:
+                raise RuntimeError('No admin_user nor previous access token found')
+
+        if admin_private_key_print_only:
+            # only hit if --admin-private-key-print-only passed, but an access token or admin user
+            # was already present, or no --admin-private-key file nor --admin-private-key-generate
+            return
+
+        with psycopg2.connect(db_uri) as db, db.cursor() as cur:
+
+            # set user as admin in database if needed
             cur.execute(
-                'UPDATE users SET admin=1 WHERE name = %s ;',
+                'SELECT admin FROM users WHERE name = %s ;',
                 (admin_user,),
             )
-            db.commit()
-        elif not is_admin:
-            raise RuntimeError(f'User {admin_user!r} is not an admin. See --admin-set option')
+            if not cur.rowcount:
+                raise RuntimeError(f'User {admin_user!r} not found')
+            is_admin, = cur.fetchone()
+            if admin_set and not is_admin:
+                cur.execute(
+                    'UPDATE users SET admin=1 WHERE name = %s ;',
+                    (admin_user,),
+                )
+                db.commit()
+            elif not is_admin:
+                raise RuntimeError(f'User {admin_user!r} is not an admin. See --admin-set option')
 
-        purges = dict()
-        def wait_and_purge_room(room_id=None, event_id=None):
-            """ Wait for available slots in parallel_purges and purge room
+            purges = dict()
+            def wait_and_purge_room(room_id=None, event_id=None):
+                """ Wait for available slots in parallel_purges and purge room
 
-            If room_id is None, just wait for current purges to complete and return
-            If event_id is None, purge all events in room
-            """
-            while len(purges) >= (parallel_purges if room_id else 1):
-                # wait and clear completed purges
-                time.sleep(1)
-                for _room_id, purge_id in list(purges.items()):
-                    response = session.get(
-                        urljoin(
-                            server,
-                            '/_matrix/client/r0/admin/purge_history_status/' + quote(purge_id),
-                        ),
-                        params={'access_token': admin_access_token},
-                    )
-                    assert response.status_code == 200, f'{response!r} => {response.text!r}'
-                    if response.json()['status'] != 'active':
-                        click.secho(f'Finished purge: room {_room_id!r}, purge {purge_id!r}')
-                        purges.pop(_room_id)
+                If room_id is None, just wait for current purges to complete and return
+                If event_id is None, purge all events in room
+                """
+                while len(purges) >= (parallel_purges if room_id else 1):
+                    # wait and clear completed purges
+                    time.sleep(1)
+                    for _room_id, purge_id in list(purges.items()):
+                        response = session.get(
+                            urljoin(
+                                server,
+                                '/_matrix/client/r0/admin/purge_history_status/' + quote(purge_id),
+                            ),
+                            params={'access_token': admin_access_token},
+                        )
+                        assert response.status_code == 200, f'{response!r} => {response.text!r}'
+                        if response.json()['status'] != 'active':
+                            click.secho(f'Finished purge: room {_room_id!r}, purge {purge_id!r}')
+                            purges.pop(_room_id)
 
-            if not room_id:
-                return
+                if not room_id:
+                    return
 
-            body = {'delete_local_events': True}
-            if event_id:
-                body['purge_up_to_event_id'] = event_id
-            else:
-                body['purge_up_to_ts'] = int(time.time() * 1000)
-            response = session.post(
-                urljoin(server, '/_matrix/client/r0/admin/purge_history/' + quote(room_id)),
-                params={'access_token': admin_access_token},
-                json=body,
-            )
-            if response.status_code == 200:
-                purge_id = response.json()['purge_id']
-                purges[room_id] = purge_id
-                return purge_id
+                body = {'delete_local_events': True}
+                if event_id:
+                    body['purge_up_to_event_id'] = event_id
+                else:
+                    body['purge_up_to_ts'] = int(time.time() * 1000)
+                response = session.post(
+                    urljoin(server, '/_matrix/client/r0/admin/purge_history/' + quote(room_id)),
+                    params={'access_token': admin_access_token},
+                    json=body,
+                )
+                if response.status_code == 200:
+                    purge_id = response.json()['purge_id']
+                    purges[room_id] = purge_id
+                    return purge_id
 
-        if not keep_newer and not keep_min_msgs:
-            click.confirm(
-                'No --keep-newer nor --keep-min-msgs option provided. Purge all history?',
-                abort=True,
-            )
-
-        ts_ms = None
-        if keep_newer:
-            ts = datetime.datetime.now() - datetime.timedelta(keep_newer)
-            ts_ms = int(ts.timestamp() * 1000)
-
-        cur.execute('SELECT room_id FROM rooms ;')
-        all_rooms = {row for row, in cur}
-
-        click.secho(f'Processing {len(all_rooms)} rooms')
-        for room_id in all_rooms:
-            # no --keep-min-msgs nor --keep-newer, purge everything
             if not keep_newer and not keep_min_msgs:
-                wait_and_purge_room(room_id)
-                continue
-            cur.execute(
-                f"""
-                SELECT event_id FROM (
-                    SELECT event_id,
-                        received_ts,
-                        COUNT(*) OVER (ORDER BY received_ts DESC) AS msg_count_above
-                    FROM events
-                    WHERE room_id=%(room_id)s AND type='m.room.message'
-                    ORDER BY received_ts DESC
-                ) t WHERE true
-                {'AND received_ts < %(ts_ms)s' if keep_newer else ''}
-                {'AND msg_count_above > %(keep_min_msgs)s' if keep_min_msgs else ''}
-                LIMIT 1 ;""",
-                {
-                    'room_id': room_id,
-                    'ts_ms': ts_ms,
-                    'keep_min_msgs': keep_min_msgs,
-                },
-            )
-            if cur.rowcount:
-                event_id, = cur.fetchone()
-                wait_and_purge_room(room_id, event_id)
-            # else: room doesn't have messages eligible for purging, skip
+                click.confirm(
+                    'No --keep-newer nor --keep-min-msgs option provided. Purge all history?',
+                    abort=True,
+                )
 
-        wait_and_purge_room(None)
+            ts_ms = None
+            if keep_newer:
+                ts = datetime.datetime.now() - datetime.timedelta(keep_newer)
+                ts_ms = int(ts.timestamp() * 1000)
 
-    if post_sql:
-        click.secho(f'Running {post_sql.name!r}')
-        with psycopg2.connect(db_uri) as db, db.cursor() as cur:
-            cur.execute(post_sql.read())
-            click.secho(f'Results {cur.rowcount}:')
-            for i, row in enumerate(cur):
-                click.secho(f'{i}: {row}')
+            cur.execute('SELECT room_id FROM rooms ;')
+            all_rooms = {row for row, in cur}
 
-    if docker_restart_label:
-        client = docker.from_env()
-        for container in client.containers.list():
-            if container.attrs['State']['Status'] == 'running' and\
-                    container.attrs['Config']['Labels'].get(docker_restart_label):
-                container.restart(timeout=30)
+            click.secho(f'Processing {len(all_rooms)} rooms')
+            for room_id in all_rooms:
+                # no --keep-min-msgs nor --keep-newer, purge everything
+                if not keep_newer and not keep_min_msgs:
+                    wait_and_purge_room(room_id)
+                    continue
+                cur.execute(
+                    f"""
+                    SELECT event_id FROM (
+                        SELECT event_id,
+                            received_ts,
+                            COUNT(*) OVER (ORDER BY received_ts DESC) AS msg_count_above
+                        FROM events
+                        WHERE room_id=%(room_id)s AND type='m.room.message'
+                        ORDER BY received_ts DESC
+                    ) t WHERE true
+                    {'AND received_ts < %(ts_ms)s' if keep_newer else ''}
+                    {'AND msg_count_above > %(keep_min_msgs)s' if keep_min_msgs else ''}
+                    LIMIT 1 ;""",
+                    {
+                        'room_id': room_id,
+                        'ts_ms': ts_ms,
+                        'keep_min_msgs': keep_min_msgs,
+                    },
+                )
+                if cur.rowcount:
+                    event_id, = cur.fetchone()
+                    wait_and_purge_room(room_id, event_id)
+                # else: room doesn't have messages eligible for purging, skip
+
+            wait_and_purge_room(None)
+
+        if post_sql:
+            click.secho(f'Running {post_sql.name!r}')
+            with psycopg2.connect(db_uri) as db, db.cursor() as cur:
+                cur.execute(post_sql.read())
+                click.secho(f'Results {cur.rowcount}:')
+                for i, row in enumerate(cur):
+                    click.secho(f'{i}: {row}')
+
+    finally:
+        if docker_restart_label:
+            client = docker.from_env()
+            for container in client.containers.list():
+                if container.attrs['State']['Status'] == 'running' and\
+                        container.attrs['Config']['Labels'].get(docker_restart_label):
+                    container.restart(timeout=30)
 
 
 if __name__ == '__main__':
