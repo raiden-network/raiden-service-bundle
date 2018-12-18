@@ -205,7 +205,7 @@ services:
       - PURGE_SLEEP_UNTIL=05:00:00
       - MATRIX_DOCKER_RESTART_LABEL=purge_restart_container
       - MATRIX_DB_URI=postgres://postgres@db:5432/synapse
-      - MATRIX_SERVER=http://synapse:8448
+      - MATRIX_SERVER=http://synapse:8008
       - SERVER_NAME
       - MATRIX_ADMIN_PRIVATE_KEY_PASSWORD=
       - MATRIX_ADMIN_PRIVATE_KEY_GENERATE=1
