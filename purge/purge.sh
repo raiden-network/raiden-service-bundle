@@ -7,11 +7,9 @@ echo -n "Started at: " ; date
 
 if [[ ! -d ./venv ]]; then
     python3 -m venv venv
-    . ./venv/bin/activate
-    pip3 install -r requirements.txt
-else
-    . ./venv/bin/activate
 fi
+. ./venv/bin/activate
+pip3 install -r requirements.txt
 
 # if PURGE_SLEEP_UNTIL env is defined and is a time in the format "%H:%m[:%s]",
 # sleep until then before continuing
