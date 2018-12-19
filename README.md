@@ -5,7 +5,7 @@
 This repository contains the documentation and configuration necessary to run a 
 Raiden Transport Matrix server.
 
-**Current release:** [2018.10.0](https://github.com/raiden-network/raiden-transport/tree/2018.10.0) 
+**Current release:** [2018.12.0](https://github.com/raiden-network/raiden-transport/tree/2018.12.0)
 
 ## Table of Contents
 
@@ -127,11 +127,11 @@ Minumum recommended for a production setup:
 
 ### Installing
 
-1. Clone the [current release version of this repository](https://github.com/raiden-network/raiden-transport/tree/2018.10.0) 
+1. Clone the [current release version of this repository](https://github.com/raiden-network/raiden-transport/tree/2018.12.0)
    to a suitable location on the server:
    
    ```shell
-   git clone -b 2018.10.0 https://github.com/raiden-network/raiden-transport.git
+   git clone -b 2018.12.0 https://github.com/raiden-network/raiden-transport.git
    ```
 1. Copy `.env.template` to `.env` and modify the values to fit your setup (see inline comments for details)
    - We would appreciate it if you allow us access to the monitoring interfaces 
@@ -186,6 +186,8 @@ or contact us via email at contact@raiden.nework.
 
 ## Changelog
 
+- 2018-12-19 - `2018.12.0` - Maintenance release
+  - purger.py restart improvements
 - 2018-10-19 - `2018.10.0` - **Maintenence release** 
   - Add new servers to known list
   - Upgrade Synapse to 0.33.7
