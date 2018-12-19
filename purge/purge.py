@@ -6,11 +6,18 @@ import psycopg2
 import datetime
 import time
 import docker
+import yaml
 from eth_keyfile import extract_key_from_keyfile, create_keyfile_json
 from eth_utils import keccak, encode_hex
 from eth_keys import keys
 from operator import itemgetter
 from urllib.parse import urlparse, urljoin, quote
+
+
+URL_KNOWN_FEDERATION_SERVERS_DEFAULT = (
+    'https://raw.githubusercontent.com/raiden-network/raiden-transport/master/known_servers.yaml'
+)
+SYNAPSE_CONFIG_PATH = '/config/synapse.yaml'
 
 
 def eth_sign_hash(data: bytes) -> bytes:
@@ -352,9 +359,48 @@ def purge(
         if docker_restart_label:
             client = docker.from_env()
             for container in client.containers.list():
-                if container.attrs['State']['Status'] == 'running' and\
-                        container.attrs['Config']['Labels'].get(docker_restart_label):
-                    container.restart(timeout=30)
+                if container.attrs['State']['Status'] != 'running' or\
+                        not container.attrs['Config']['Labels'].get(docker_restart_label):
+                    continue
+
+                try:
+                    # parse container's env vars
+                    env_vars = dict(
+                        itemgetter(0, 2)(e.partition('='))
+                        for e in container.attrs['Config']['Env']
+                    )
+                    remote_config_file = env_vars.get(
+                        'URL_KNOWN_FEDERATION_SERVERS',
+                    ) or URL_KNOWN_FEDERATION_SERVERS_DEFAULT
+
+                    # fetch remote file
+                    remote_whitelist = yaml.load(requests.get(remote_config_file).text)
+
+                    # fetch local list from container's synapse config
+                    local_whitelist = yaml.load(
+                        container.exec_run(['cat', SYNAPSE_CONFIG_PATH]).output,
+                    )['federation_domain_whitelist']
+
+                    # if list didn't change, don't proceed to restart container
+                    if local_whitelist and remote_whitelist == local_whitelist:
+                        continue
+
+                    click.secho(
+                        f'Whitelist changed. Restarting. new_list={remote_whitelist!r}',
+                    )
+                except (
+                        KeyError,
+                        IndexError,
+                        requests.RequestException,
+                        yaml.scanner.ScannerError,
+                ) as ex:
+                    click.secho(
+                        f'An error ocurred while fetching whitelists: {ex!r}\n'
+                        'Restarting anyway',
+                        err=True,
+                    )
+                # restart container
+                container.restart(timeout=30)
 
 
 if __name__ == '__main__':
