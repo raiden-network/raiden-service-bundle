@@ -1,69 +1,70 @@
-# -*- coding: utf-8 -*-
 import os
-import codecs
 import random
 import string
-import urllib2
+from pathlib import Path
+from urllib.error import URLError
+from urllib.request import urlopen
 
 
-PATH_CONFIG = '/config/synapse.yaml'
-PATH_CONFIG_TEMPLATE = '/config/synapse.template.yaml'
-PATH_MACAROON_KEY = '/data/keys/macaroon.key'
-PATH_KNOWN_FEDERATION_SERVERS = '/data/known_federation_servers.yaml'
+PATH_CONFIG = Path("/config/synapse.yaml")
+PATH_CONFIG_TEMPLATE = Path("/config/synapse.template.yaml")
+PATH_MACAROON_KEY = Path("/data/keys/macaroon.key")
+PATH_KNOWN_FEDERATION_SERVERS = Path("/data/known_federation_servers.yaml")
 
 URL_KNOWN_FEDERATION_SERVERS_DEFAULT = (
-    'https://raw.githubusercontent.com/raiden-network/raiden-transport/master/known_servers.yaml'
+    "https://raw.githubusercontent.com/"
+    "raiden-network/raiden-transport/master/known_servers.yaml"
 )
 
 
-def get_macaroon_key():
-    if not os.path.isfile(PATH_MACAROON_KEY):
-        alphabet = string.digits + string.ascii_letters + '!@#$%^&*()_-=+{}[]'
-        macaroon = ''.join(random.choice(alphabet) for _ in range(30))
-        with codecs.open(PATH_MACAROON_KEY, 'w', encoding='utf-8') as fo:
-            fo.write(macaroon)
+def get_macaroon_key() -> str:
+    if not PATH_MACAROON_KEY.exists():
+        alphabet = string.digits + string.ascii_letters + "!@#$%^&*()_-=+{}[]"
+        macaroon = "".join(random.choice(alphabet) for _ in range(30))
+        PATH_MACAROON_KEY.write_text(macaroon)
     else:
-        with codecs.open(PATH_MACAROON_KEY, 'r', encoding='utf-8') as fi:
-            macaroon = fi.read()
+        macaroon = PATH_MACAROON_KEY.read_text()
     return macaroon
 
 
-def get_known_federation_servers():
-    url_known_federation_servers = os.environ.get(
-        'URL_KNOWN_FEDERATION_SERVERS',
-        URL_KNOWN_FEDERATION_SERVERS_DEFAULT
-    )
+def get_known_federation_servers(url_known_federation_servers: str) -> str:
     if not url_known_federation_servers:
         # In case the env variable is set but empty
         url_known_federation_servers = URL_KNOWN_FEDERATION_SERVERS_DEFAULT
-    print('Fetching known federation servers from:', url_known_federation_servers)
+    print("Fetching known federation servers from:", url_known_federation_servers)
     try:
-        resp = urllib2.urlopen(url_known_federation_servers)
+        resp = urlopen(url_known_federation_servers)
         if 200 <= resp.code < 300:
-            with codecs.open(PATH_KNOWN_FEDERATION_SERVERS, 'w', encoding='utf-8') as fo:
-                fo.write(resp.read().decode())
+            PATH_KNOWN_FEDERATION_SERVERS.write_text(resp.read().decode())
         else:
-            print('Error fetching known servers list:', resp.code, resp.read().decode())
-    except urllib2.URLError as ex:
-        print('Error fetching known servers list', ex)
-    if os.path.isfile(PATH_KNOWN_FEDERATION_SERVERS):
-        with codecs.open(PATH_KNOWN_FEDERATION_SERVERS, 'r', encoding='utf-8') as fi:
-            return fi.read()
-    return ''
+            print("Error fetching known servers list:", resp.code, resp.read().decode())
+    except URLError as ex:
+        print("Error fetching known servers list", ex)
+    if PATH_KNOWN_FEDERATION_SERVERS.exists():
+        return PATH_KNOWN_FEDERATION_SERVERS.read_text()
+    return ""
 
 
-def main():
-    template_vars = {
-        'MACAROON_KEY': get_macaroon_key(),
-        'SERVER_NAME': os.environ['SERVER_NAME'],
-        'KNOWN_SERVERS': get_known_federation_servers(),
-    }
-    with codecs.open(PATH_CONFIG_TEMPLATE, 'r', encoding='utf-8') as fi:
-        template_content = fi.read()
-    with codecs.open(PATH_CONFIG, 'w', encoding='utf-8') as fo:
-        fo.write(
-            string.Template(template_content).substitute(**template_vars),
-        )
+def render_synapse_config(server_name: str, url_known_federation_servers: str) -> None:
+    template_content = PATH_CONFIG_TEMPLATE.read_text()
+    rendered_config = string.Template(template_content).substitute(
+        MACAROON_KEY=get_macaroon_key(),
+        SERVER_NAME=server_name,
+        KNOWN_SERVERS=get_known_federation_servers(url_known_federation_servers),
+    )
+    PATH_CONFIG.write_text(rendered_config)
+
+
+def main() -> None:
+    url_known_federation_servers = os.environ.get(
+        "URL_KNOWN_FEDERATION_SERVERS", URL_KNOWN_FEDERATION_SERVERS_DEFAULT
+    )
+    server_name = os.environ["SERVER_NAME"]
+
+    render_synapse_config(
+        server_name=server_name,
+        url_known_federation_servers=url_known_federation_servers,
+    )
 
 
 if __name__ == "__main__":
