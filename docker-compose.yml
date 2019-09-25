@@ -20,8 +20,6 @@ services:
     depends_on:
       db:
         condition: service_healthy
-#      cert_extractor:
-#        condition: service_healthy
     labels:
       - "traefik.enable=true"
       - "traefik.default.port=8008"
@@ -156,17 +154,6 @@ services:
     healthcheck:
       test: echo 'select 1' | psql -U postgres > /dev/null || exit 1
 
-#  cert_extractor:
-#    build:
-#      context: build/extract-certs
-#    restart: always
-#    volumes:
-#      - ${DATA_DIR:-./data}/traefik:/in:ro
-#      - ${DATA_DIR:-./data}/synapse:/out
-#    depends_on:
-#      traefik:
-#        condition: service_started
-#    command: /in/acme.json /out/keys
 
   traefik:
     image: traefik:1.7
