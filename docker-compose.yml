@@ -49,6 +49,7 @@ services:
       - "traefik.enable=true"
       - "traefik.port=8008"
       - "traefik.frontend.rule=Host:${SERVER_NAME}; PathPrefix: /_matrix/client/{version:(v2_alpha|r0)}/sync, /_matrix/client/{version:(api/v1|v2_alpha|r0)}/events, /_matrix/client/{version:(api/v1|r0)}/initialSync, /_matrix/client/{version:(api/v1|r0)}/rooms/{room:[^/]+}/initialSync"
+      - "traefik.backend.loadbalancer.stickiness=true"
 
 #  federation_reader:
 #    image: raiden-network/synapse
@@ -103,7 +104,8 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.port=8008"
-      - "traefik.frontend.rule=Host:${SERVER_NAME}; PathPrefix: /_matrix/client/versions, /_matrix/client/{version:(api/v1|r0|unstable)}/publicRooms, /_matrix/client/{version:(api/v1|r0|unstable)}/rooms/{room:.*}/joined_members, /_matrix/client/{version:(api/v1|r0|unstable)}/rooms/{room:.*}/context/{context:.*}, /_matrix/client/{version:(api/v1|r0|unstable)}/rooms/{room:.*}/members, /_matrix/client/{version:(api/v1|r0|unstable)}/rooms/{room:.*}/state, /_matrix/client/{version:(api/v1|r0|unstable)}/login, /_matrix/client/{version:(api/v1|r0|unstable)}/account/3pid, /_matrix/client/{version:(api/v1|r0|unstable)}/keys/query, /_matrix/client/{version:(api/v1|r0|unstable)}/keys/changes, /_matrix/client/{version:(api/v1|r0|unstable)}/voip/turnServer"
+      - "traefik.frontend.rule=Host:${SERVER_NAME}; PathPrefix: /_matrix/client/versions, /_matrix/client/{version:(api/v1|r0|unstable)}/publicRooms, /_matrix/client/{version:(api/v1|r0|unstable)}/rooms/{room:.*}/joined_members, /_matrix/client/{version:(api/v1|r0|unstable)}/rooms/{room:.*}/context/{context:.*}, /_matrix/client/{version:(api/v1|r0|unstable)}/rooms/{room:.*}/members, /_matrix/client/{version:(api/v1|r0|unstable)}/rooms/{room:.*}/state, /_matrix/client/{version:(api/v1|r0|unstable)}/account/3pid, /_matrix/client/{version:(api/v1|r0|unstable)}/keys/query, /_matrix/client/{version:(api/v1|r0|unstable)}/keys/changes, /_matrix/client/{version:(api/v1|r0|unstable)}/voip/turnServer"
+      - "traefik.backend.loadbalancer.stickiness=true"
 
   user_dir:
     image: raiden-network/synapse
@@ -124,6 +126,7 @@ services:
       - "traefik.enable=true"
       - "traefik.port=8008"
       - "traefik.frontend.rule=Host:${SERVER_NAME}; PathPrefix: /_matrix/client/{version:(api/v1|r0|unstable)}/user_directory/search"
+      - "traefik.backend.loadbalancer.stickiness=true"
 
   event_creator:
     image: raiden-network/synapse
@@ -144,6 +147,7 @@ services:
       - "traefik.enable=true"
       - "traefik.port=8008"
       - "traefik.frontend.rule=Host:${SERVER_NAME}; PathPrefix: /_matrix/client/{version:(api/v1|r0|unstable)}/rooms/{room:.*}/send, /_matrix/client/{version:(api/v1|r0|unstable)}/rooms/{room:.*}/{action:(join|invite|leave|ban|unban|kick)}, /_matrix/client/{version:(api/v1|r0|unstable)}/join/, /_matrix/client/{version:(api/v1|r0|unstable)}/profile/"
+      - "traefik.backend.loadbalancer.stickiness=true"
 
   db:
     build:
