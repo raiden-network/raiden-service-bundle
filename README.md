@@ -52,14 +52,14 @@ provide configurations with services split among multiple servers.
           |
 +---------v---------+
 |                   |
-|      Traefik      |  
+|      Traefik    +-+-----> Federation to other  
+|                 | |       Raiden Matrix servers
++---------+-------+-+
+          |       |
++---------v-------v-+
 |                   |
-+---------+---------+
-          |
-+---------v---------+
-|                   |
-|      Synapse      <-----> Federation to other
-|                   |       Raiden Matrix servers
+|      Synapse      |
+|                   |       
 +---------+---------+
           |
 +---------v---------+
@@ -87,19 +87,20 @@ After a successful deployment the following ports will be in use:
   - Let's Encrypt HTTP challenge for certificate provisioning
 - 443 - HTTPS 
   - Synapse web and API client access
-  - Metrics export (IP restricted, see below) 
-- 8448 - HTTPS
   - Synapse Server-to-Server federation
+  - Metrics export (IP restricted, see below) 
 
 ## Requirements
 
 ### Hardware
 
-Minumum recommended for a production setup:
+Minimum recommended for a production setup:
 
-- 16 GiB Ram
-- 8 Cores
+- 16 GiB RAM
+-  8 Cores
 - 50 GiB SSD
+
+Note: The default Postgres configuration assumes 16GiB of system RAM   
 
 ### Software
 
@@ -140,7 +141,7 @@ Minumum recommended for a production setup:
 1. Run `docker-compose build` to build the containers
 1. Run `docker-compose up -d` to start all services
    - The services are configured to automatically restart in case of a crash or reboot
-1. Verify the service is up by opening the domain in a browser. You should see the synapse login screen.
+1. Verify the service is up by opening the domain in a browser. You should see a page with the Matrix logo.
 
 ### Submit
 
@@ -155,7 +156,8 @@ configuration changes and then run the following commands:
 ```shell
 git fetch origin --tags
 git reset --hard <new-release-tag>
-docker-compose build
+docker-compose build --pull
+docker-compose pull
 docker-compose up -d
 ```
 ## Notes:
@@ -186,7 +188,12 @@ or contact us via email at contact@raiden.nework.
 
 ## Changelog
 
-- 2018-12-19 - `2018.12.0` - Maintenance release
+- 2019-09-25 - `2019.9.0` - **Upgrade release**
+  - Upgrade Synapse to v1.3.1
+  - Tune Postgres default parameters
+  - Merge federation access under regular HTTPS port (443)
+    - Port 8448 is no longer needed
+- 2018-12-19 - `2018.12.0` - **Maintenance release**
   - purger.py restart improvements
 - 2018-10-19 - `2018.10.0` - **Maintenence release** 
   - Add new servers to known list
