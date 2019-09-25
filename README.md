@@ -195,7 +195,7 @@ or contact us via email at contact@raiden.nework.
     - Port 8448 is no longer needed
 - 2018-12-19 - `2018.12.0` - **Maintenance release**
   - purger.py restart improvements
-- 2018-10-19 - `2018.10.0` - **Maintenence release** 
+- 2018-10-19 - `2019.9.0` - **Maintenence release** 
   - Add new servers to known list
   - Upgrade Synapse to 0.33.7
   - Automatically purge historic state and restart service once a day, removing the need for an external cron service
