@@ -1,3 +1,4 @@
+import json
 import os
 import random
 import string
@@ -5,11 +6,11 @@ from pathlib import Path
 from urllib.error import URLError
 from urllib.request import urlopen
 
-
 PATH_CONFIG = Path("/config/synapse.yaml")
 PATH_CONFIG_TEMPLATE = Path("/config/synapse.template.yaml")
 PATH_MACAROON_KEY = Path("/data/keys/macaroon.key")
 PATH_KNOWN_FEDERATION_SERVERS = Path("/data/known_federation_servers.yaml")
+PATH_WELL_KNOWN_FILE = Path("/data_well_known/server")
 
 URL_KNOWN_FEDERATION_SERVERS_DEFAULT = (
     "https://raw.githubusercontent.com/"
@@ -55,6 +56,11 @@ def render_synapse_config(server_name: str, url_known_federation_servers: str) -
     PATH_CONFIG.write_text(rendered_config)
 
 
+def render_well_known_file(server_name: str) -> None:
+    content = {"m.server": f"{server_name}:443"}
+    PATH_WELL_KNOWN_FILE.write_text(json.dumps(content, indent=2))
+
+
 def main() -> None:
     url_known_federation_servers = os.environ.get(
         "URL_KNOWN_FEDERATION_SERVERS", URL_KNOWN_FEDERATION_SERVERS_DEFAULT
@@ -65,8 +71,8 @@ def main() -> None:
         server_name=server_name,
         url_known_federation_servers=url_known_federation_servers,
     )
+    render_well_known_file(server_name=server_name)
 
 
 if __name__ == "__main__":
     main()
-

@@ -11,6 +11,7 @@ services:
     restart: always
     volumes:
       - ./config/synapse:/config
+      - ${DATA_DIR:-./data}/well-known:/data_well_known
       - ${DATA_DIR:-./data}/synapse:/data
     environment:
       - SERVER_NAME
@@ -153,6 +154,19 @@ services:
     healthcheck:
       test: echo 'select 1' | psql -U postgres > /dev/null || exit 1
 
+  # Serves the .well-known/matrix/server file
+  well_known_server:
+    build:
+      context: build/well_known_server
+    restart: always
+    volumes:
+      - ${DATA_DIR:-./data}/well-known:/data
+    depends_on:
+      synapse:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.frontend.rule=Host:${SERVER_NAME}; PathPrefix: /.well-known/matrix"
 
   traefik:
     image: traefik:1.7
@@ -166,11 +180,18 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     command: --acme.email=${LETSENCRYPT_EMAIL}
     depends_on:
-      - synapse
-      - synchrotron
-      - client_reader
-      - user_dir
-      - event_creator
+      synapse:
+        condition: service_healthy
+      well_known_server:
+        condition: service_healthy
+      synchrotron:
+        condition: service_started
+      client_reader:
+        condition: service_started
+      user_dir:
+        condition: service_started
+      event_creator:
+        condition: service_started
     labels:
       - "traefik.enable=true"
       - "traefik.port=8080"
@@ -185,8 +206,10 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     working_dir: /app
     depends_on:
-      - synapse
-      - db
+      synapse:
+        condition: service_healthy
+      db:
+        condition: service_healthy
     environment:
       - PURGE_SLEEP_UNTIL=05:00:00
       - MATRIX_DOCKER_RESTART_LABEL=purge_restart_container
