@@ -139,7 +139,7 @@ Note: The default Postgres configuration assumes 16GiB of system RAM
      (to do that uncomment the default values of the `CIDR_ALLOW_METRICS` and `CIDR_ALLOW_PROXY` settings).
    - We also recommend that you provide your own monitoring. The setup of which is currently out of scope of this document. 
 1. Run `docker-compose build` to build the containers
-1. Run `docker-compose up -d` to start all services
+1. Run `docker-compose --compatibility up -d` to start all services
    - The services are configured to automatically restart in case of a crash or reboot
 1. Verify the service is up by opening the domain in a browser. You should see a page with the Matrix logo.
 
@@ -189,6 +189,7 @@ or contact us via email at contact@raiden.nework.
 ## Changelog
 
 - 2019-09-25 - `2019.9.0` - **Upgrade release**
+  - Add https://github.com/raiden-network/raiden-services services to the bundle
   - Upgrade Synapse to v1.3.1
   - Tune Postgres default parameters
   - Merge federation access under regular HTTPS port (443)
