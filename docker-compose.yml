@@ -1,7 +1,82 @@
-# Only compose file versions >=2.2,<3 support the `scale` parameter
-version: "2.3"
+# Since we will use '3.4'
+# - for `deploy.replicas` to work locally (without swarm), you'll have to
+#   use `docker-compose --compatibility up ...`
+#   see https://github.com/docker/compose/issues/5586
+# - for `replicas: ${WORKER_COUNT:-4}` to work, you'll have to have
+#  `docker-compose` version >= 1.18.0
+#   see https://github.com/docker/compose/pull/5291
+version: '3.4'
+
+x-defaults: &defaults
+  image: raiden-services
+  env_file: .env
+  volumes:
+    - ${DATA_DIR:-./data}/state:/state
+    - ${DATA_DIR:-./data}/keystore:/keystore
 
 services:
+# raiden-services containers
+  pfs:
+    << : *defaults
+    build: ../raiden-services/
+    command: ["python3", "-m", "pathfinding_service.cli"]
+    restart: always
+    ports:
+      - 6001:6000
+    environment:
+      - PFS_KEYSTORE_FILE=${SERVER_NAME}
+      - PFS_STATE_DB=/state/pfs-state.db
+      - PFS_HOST=0.0.0.0
+      - SERVER_NAME
+      - PFS_LOG_LEVEL=${LOG_LEVEL}
+      - PFS_KEYSTORE_FILE=/keystore/${KEYSTORE_FILE}
+      - PFS_PASSWORD=${PASSWORD}
+      - PFS_ETH_RPC=${ETH_RPC}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.frontend.rule=Host:${SERVER_NAME}"
+
+  ms:
+    << : *defaults
+    command: ["python3", "-m", "monitoring_service.cli"]
+    restart: always
+    ports:
+      - 6002:6000
+    environment:
+      - MS_STATE_DB=/state/ms-state.db
+      - MS_LOG_LEVEL=${LOG_LEVEL}
+      - MS_KEYSTORE_FILE=/keystore/${KEYSTORE_FILE}
+      - MS_PASSWORD=${PASSWORD}
+      - MS_ETH_RPC=${ETH_RPC}
+
+  msrc:
+    << : *defaults
+    command: ["python3", "-m", "request_collector.cli"]
+    restart: always
+    ports:
+      - 6003:6000
+    environment:
+      - MSRC_STATE_DB=/state/ms-state.db
+      - MSRC_LOG_LEVEL=${LOG_LEVEL}
+      - MSRC_KEYSTORE_FILE=/keystore/${KEYSTORE_FILE}
+      - MSRC_PASSWORD=${PASSWORD}
+      - MSRC_CHAIN_ID=${CHAIN_ID}
+    depends_on:
+      - ms
+  # This registers the service and stops afterwards
+  registration:
+    <<: *defaults
+    command: ["python3", "-m", "raiden_libs.register_service"]
+    environment:
+      - RDN_REGISTRY_LOG_LEVEL=${LOG_LEVEL}
+      - RDN_REGISTRY_KEYSTORE_FILE=/keystore/${KEYSTORE_FILE}
+      - RDN_REGISTRY_PASSWORD=${PASSWORD}
+      - RDN_REGISTRY_SERVICE_URL=${SERVER_NAME}
+      - RDN_REGISTRY_ETH_RPC=${ETH_RPC}
+    depends_on:
+      - traefik
+
+# raiden-transport containers
   synapse:
     build:
       context: build/synapse
@@ -17,8 +92,7 @@ services:
       - SERVER_NAME
       - URL_KNOWN_FEDERATION_SERVERS
     depends_on:
-      db:
-        condition: service_healthy
+      - db
     labels:
       - "traefik.enable=true"
       - "traefik.default.port=8008"
@@ -39,12 +113,12 @@ services:
     environment:
       - SERVER_NAME
     depends_on:
-      synapse:
-        condition: service_healthy
+      - synapse
     entrypoint: ["/synapse-venv/bin/python", "-m", "synapse.app.synchrotron", "--config-path", "/config/synapse.yaml", "--config-path", "/config/workers/synchrotron.yaml"]
     healthcheck:
       disable: true
-    scale: ${WORKER_COUNT:-4}
+    deploy:
+      replicas: ${WORKER_COUNT:-4}
     labels:
       - "traefik.enable=true"
       - "traefik.port=8008"
@@ -96,8 +170,7 @@ services:
     environment:
       - SERVER_NAME
     depends_on:
-      synapse:
-        condition: service_healthy
+      - synapse
     entrypoint: ["/synapse-venv/bin/python", "-m", "synapse.app.client_reader", "--config-path", "/config/synapse.yaml", "--config-path", "/config/workers/client_reader.yaml"]
     healthcheck:
       disable: true
@@ -116,12 +189,12 @@ services:
     environment:
       - SERVER_NAME
     depends_on:
-      synapse:
-        condition: service_healthy
+    - synapse
     entrypoint: ["/synapse-venv/bin/python", "-m", "synapse.app.user_dir", "--config-path", "/config/synapse.yaml", "--config-path", "/config/workers/user_dir.yaml"]
     healthcheck:
       disable: true
-    scale: 4
+    deploy:
+      replicas: 4
     labels:
       - "traefik.enable=true"
       - "traefik.port=8008"
@@ -137,12 +210,12 @@ services:
     environment:
       - SERVER_NAME
     depends_on:
-      synapse:
-        condition: service_healthy
+    - synapse
     entrypoint: ["/synapse-venv/bin/python", "-m", "synapse.app.event_creator", "--config-path", "/config/synapse.yaml", "--config-path", "/config/workers/event_creator.yaml"]
     healthcheck:
       disable: true
-    scale: ${WORKER_COUNT:-4}
+    deploy:
+      replicas: ${WORKER_COUNT:-4}
     labels:
       - "traefik.enable=true"
       - "traefik.port=8008"
@@ -166,12 +239,32 @@ services:
     volumes:
       - ${DATA_DIR:-./data}/well-known:/data
     depends_on:
-      synapse:
-        condition: service_healthy
+      - synapse
     labels:
       - "traefik.enable=true"
       - "traefik.frontend.rule=Host:${SERVER_NAME}; PathPrefix: /.well-known/matrix"
-
+  purger:
+    image: python:3
+    restart: always
+    volumes:
+      - ./purge:/app
+      - /var/run/docker.sock:/var/run/docker.sock
+    working_dir: /app
+    depends_on:
+      - synapse
+      - db
+    environment:
+      - PURGE_SLEEP_UNTIL=05:00:00
+      - MATRIX_DOCKER_RESTART_LABEL=purge_restart_container
+      - MATRIX_DB_URI=postgres://postgres@db:5432/synapse
+      - MATRIX_SERVER=http://synapse:8008
+      - SERVER_NAME
+      - MATRIX_ADMIN_PRIVATE_KEY_PASSWORD=
+      - MATRIX_ADMIN_PRIVATE_KEY_GENERATE=1
+      - MATRIX_KEEP_NEWER=15
+      - MATRIX_KEEP_MIN_MSGS=3000
+    command: bash purge.sh
+# common traefik
   traefik:
     image: traefik:1.7
     restart: always
@@ -184,44 +277,17 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     command: --acme.email=${LETSENCRYPT_EMAIL}
     depends_on:
-      synapse:
-        condition: service_healthy
-      well_known_server:
-        condition: service_healthy
-      synchrotron:
-        condition: service_started
-      client_reader:
-        condition: service_started
-      user_dir:
-        condition: service_started
-      event_creator:
-        condition: service_started
+      - synapse
+      - well_known_server
+      - synchrotron
+      - client_reader
+      - user_dir
+      - event_creator
+      - pfs
+      - ms
+      - msrc
     labels:
       - "traefik.enable=true"
       - "traefik.port=8080"
       - "traefik.frontend.rule=Host:proxy.${SERVER_NAME}"
       - "traefik.frontend.whiteList.sourceRange=${CIDR_ALLOW_PROXY}"
-
-  purger:
-    image: python:3
-    restart: always
-    volumes:
-      - ./purge:/app
-      - /var/run/docker.sock:/var/run/docker.sock
-    working_dir: /app
-    depends_on:
-      synapse:
-        condition: service_healthy
-      db:
-        condition: service_healthy
-    environment:
-      - PURGE_SLEEP_UNTIL=05:00:00
-      - MATRIX_DOCKER_RESTART_LABEL=purge_restart_container
-      - MATRIX_DB_URI=postgres://postgres@db:5432/synapse
-      - MATRIX_SERVER=http://synapse:8008
-      - SERVER_NAME
-      - MATRIX_ADMIN_PRIVATE_KEY_PASSWORD=
-      - MATRIX_ADMIN_PRIVATE_KEY_GENERATE=1
-      - MATRIX_KEEP_NEWER=15
-      - MATRIX_KEEP_MIN_MSGS=3000
-    command: bash purge.sh
