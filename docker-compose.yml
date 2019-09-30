@@ -43,7 +43,7 @@ services:
       - MS_PASSWORD=${PASSWORD}
       - MS_ETH_RPC=${ETH_RPC}
     healthcheck:
-      test: exit 0
+      test: 'python3 -c "import sqlite3, sys; from time import sleep; conn=sqlite3.connect(\"/state/ms-state.db\"); r = lambda: conn.execute(\"select latest_commited_block from blockchain ORDER BY latest_commited_block DESC LIMIT 1;\").fetchone()[0]; one = r(); sleep(25); two = r(); print(two); sys.exit(0 if two > one else 1)"'
 
   msrc:
     << : *defaults
