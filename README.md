@@ -37,6 +37,7 @@ provide configurations with services split among multiple servers.
 - Synapse
 - Postgres
 - Traefik
+- Raiden Services
 
 ### Structure
 
@@ -51,16 +52,16 @@ provide configurations with services split among multiple servers.
 ==========|==========
           |
 +---------v---------+
-|                   |
-|      Traefik    +-+-----> Federation to other  
-|                 | |       Raiden Matrix servers
-+---------+-------+-+
-          |       |
-+---------v-------v-+
-|                   |
-|      Synapse      |
-|                   |       
-+---------+---------+
+|                   |        Federation to other
+|      Traefik    +-+----->  Raiden Matrix servers 
+|                 | |       
++---------+-------+-+---------+
+          |       |           |
++---------v-------v-+   +-----v----------------+
+|                   |   |                      |
+|      Synapse      |   |  Raiden Pathfinding  |
+|                   |   |                      | 
++---------+---------+   +----------------------+
           |
 +---------v---------+
 |                   |
@@ -88,6 +89,7 @@ After a successful deployment the following ports will be in use:
 - 443 - HTTPS 
   - Synapse web and API client access
   - Synapse Server-to-Server federation
+  - Raiden Pathfinding Server (on subdomain `pfs.$SERVER_NAME`)
   - Metrics export (IP restricted, see below) 
 
 ## Requirements
@@ -124,6 +126,7 @@ Note: The default Postgres configuration assumes 16GiB of system RAM
    - somecompany-raidentransport.tld
 
 1. Configure `A` (and optionally `AAAA`) DNS records for the domain pointing to the servers IP address(es)
+1. Configure `A` (and optionally `AAAA`) DNS records for `pfs.<domain>` pointing to the servers IP address(es)
 1. Configure a `CNAME` DNS record for `*.<domain>` pointing back to `<domain>`
 
 ### Installing
@@ -139,7 +142,7 @@ Note: The default Postgres configuration assumes 16GiB of system RAM
      (to do that uncomment the default values of the `CIDR_ALLOW_METRICS` and `CIDR_ALLOW_PROXY` settings).
    - We also recommend that you provide your own monitoring. The setup of which is currently out of scope of this document. 
 1. Run `docker-compose build` to build the containers
-1. Run `docker-compose --compatibility up -d` to start all services
+1. Run `docker-compose up -d` to start all services
    - The services are configured to automatically restart in case of a crash or reboot
 1. Verify the service is up by opening the domain in a browser. You should see a page with the Matrix logo.
 
