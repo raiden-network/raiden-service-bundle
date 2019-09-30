@@ -26,6 +26,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.frontend.rule=Host:pfs.${SERVER_NAME}"
+      - "traefik.default.backend.healthcheck.path=/api/v1/info"
     healthcheck:
       test: exit 0
 
