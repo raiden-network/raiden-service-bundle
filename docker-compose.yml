@@ -28,7 +28,7 @@ services:
       - "traefik.frontend.rule=Host:pfs.${SERVER_NAME}"
       - "traefik.default.backend.healthcheck.path=/api/v1/info"
     healthcheck:
-      test: exit 0
+      disable: true
 
   ms:
     << : *defaults
@@ -61,7 +61,7 @@ services:
       ms:
         condition: service_healthy
     healthcheck:
-      test: exit 0
+      disable: true
   # This registers the service and stops afterwards
   registration:
     <<: *defaults
@@ -115,7 +115,7 @@ services:
         condition: service_healthy
     entrypoint: ["/synapse-venv/bin/python", "-m", "synapse.app.synchrotron", "--config-path", "/config/synapse.yaml", "--config-path", "/config/workers/synchrotron.yaml"]
     healthcheck:
-      test: exit 0
+      disable: true
     scale: ${WORKER_COUNT:-4}
     labels:
       - "traefik.enable=true"
@@ -172,7 +172,7 @@ services:
         condition: service_healthy
     entrypoint: ["/synapse-venv/bin/python", "-m", "synapse.app.client_reader", "--config-path", "/config/synapse.yaml", "--config-path", "/config/workers/client_reader.yaml"]
     healthcheck:
-      test: exit 0
+      disable: true
     labels:
       - "traefik.enable=true"
       - "traefik.port=8008"
@@ -192,7 +192,7 @@ services:
         condition: service_healthy
     entrypoint: ["/synapse-venv/bin/python", "-m", "synapse.app.user_dir", "--config-path", "/config/synapse.yaml", "--config-path", "/config/workers/user_dir.yaml"]
     healthcheck:
-      test: exit 0
+      disable: true
     scale: 4
     labels:
       - "traefik.enable=true"
@@ -213,7 +213,7 @@ services:
         condition: service_healthy
     entrypoint: ["/synapse-venv/bin/python", "-m", "synapse.app.event_creator", "--config-path", "/config/synapse.yaml", "--config-path", "/config/workers/event_creator.yaml"]
     healthcheck:
-      test: exit 0
+      disable: true
     scale: ${WORKER_COUNT:-4}
     labels:
       - "traefik.enable=true"
@@ -283,19 +283,19 @@ services:
       well_known_server:
         condition: service_healthy
       synchrotron:
-        condition: service_healthy
+        condition: service_started
       client_reader:
-        condition: service_healthy
+        condition: service_started
       user_dir:
-        condition: service_healthy
+        condition: service_started
       event_creator:
-        condition: service_healthy
+        condition: service_started
       pfs:
-        condition: service_healthy
+        condition: service_started
       ms:
         condition: service_healthy
       msrc:
-        condition: service_healthy
+        condition: service_started
     healthcheck:
       disable: true
     labels:
