@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Put this file in a place accessible by the synapse server
 
 # Enable it in homeserver's config with:
@@ -16,73 +15,76 @@
 import logging
 import re
 from binascii import unhexlify
-from twisted.internet import defer
+from typing import Callable
+
 from coincurve import PublicKey
 from Crypto.Hash import keccak
+from twisted.internet import defer
 
-
-__version__ = '0.1'
+__version__ = "0.1"
 logger = logging.getLogger(__name__)
 
 
-def _sha3(data):
+def _sha3(data: bytes) -> bytes:
     k = keccak.new(digest_bits=256)
     k.update(data)
     return k.digest()
 
 
-def _eth_sign_sha3(data):
+def _eth_sign_sha3(data: bytes) -> bytes:
     """
     eth_sign/recover compatible hasher
     Prefixes data with "\x19Ethereum Signed Message:\n<len(data)>"
     """
-    if not data.startswith('\x19Ethereum Signed Message:'):
-        data = '\x19Ethereum Signed Message:\n%d%s' % (len(data), data)
+    prefix = b"\x19Ethereum Signed Message:\n"
+    if not data.startswith(prefix):
+        data = b"%s%d%s" % (prefix, len(data), data)
     return _sha3(data)
 
 
-def _recover(data, signature, hasher=_eth_sign_sha3):
+def _recover(
+    data: bytes, signature: bytes, hasher: Callable[[bytes], bytes] = _eth_sign_sha3
+) -> bytes:
     """ Returns account address in canonical format which signed data """
-    if len(signature) != 65 or ord(signature[-1]) < 27:
-        logger.error('invalid signature')
-        return
-    signature = signature[:-1] + chr(ord(signature[-1]) - 27)
+    if len(signature) != 65:
+        logger.error("invalid signature")
+        return b""
+    if signature[-1] >= 27:
+        signature = signature[:-1] + bytes([signature[-1] - 27])
     try:
-        publickey = PublicKey.from_signature_and_message(
-            signature,
-            data,
-            hasher=hasher,
-        )
-        publickey = publickey.format(compressed=False)
+        publickey_bytes = PublicKey.from_signature_and_message(
+            signature, data, hasher=hasher
+        ).format(compressed=False)
     except Exception as e:
         # secp256k1 is using bare Exception cls: raised if the recovery failed
-        logger.error('error while recovering pubkey: %s', e)
-        return
+        logger.error("error while recovering pubkey: %s", e)
+        return b""
 
-    address = _sha3(publickey[1:])[12:]
+    address = _sha3(publickey_bytes[1:])[12:]
     return address
 
 
-class EthAuthProvider(object):
-    __version__ = '0.1'
-    _user_re = re.compile(r'^@(0x[0-9a-f]{40}):(.+)$')
-    _password_re = re.compile(r'^0x[0-9a-f]{130}$')
+class EthAuthProvider:
+    __version__ = "0.1"
+    _user_re = re.compile(r"^@(0x[0-9a-f]{40}):(.+)$")
+    _password_re = re.compile(r"^0x[0-9a-f]{130}$")
 
     def __init__(self, config, account_handler):
         self.account_handler = account_handler
         self.config = config
         self.hs_hostname = self.account_handler.hs.hostname
+        self.log = logging.getLogger(__name__)
 
     @defer.inlineCallbacks
-    def check_password(self, user_id, password):
+    def check_password(self, user_id: str, password: str):
         if not password:
-            logger.error('no password provided, user=%r', user_id)
+            self.log.error("No password provided, user=%r", user_id)
             defer.returnValue(False)
 
         if not self._password_re.match(password):
-            logger.error(
-                'invalid password format, must be 0x-prefixed hex, '
-                'lowercase, 65-bytes hash. user=%r',
+            self.log.error(
+                "Invalid password format, must be 0x-prefixed hex, "
+                "lowercase, 65-bytes hash. user=%r",
                 user_id,
             )
             defer.returnValue(False)
@@ -91,9 +93,9 @@ class EthAuthProvider(object):
 
         user_match = self._user_re.match(user_id)
         if not user_match or user_match.group(2) != self.hs_hostname:
-            logger.error(
-                'invalid user format, must start with 0x-prefixed hex, '
-                'lowercase address. user=%r',
+            self.log.error(
+                "Invalid user format, must start with 0x-prefixed hex, "
+                "lowercase address. user=%r",
                 user_id,
             )
             defer.returnValue(False)
@@ -101,20 +103,21 @@ class EthAuthProvider(object):
         user_addr_hex = user_match.group(1)
         user_addr = unhexlify(user_addr_hex[2:])
 
-        rec_addr = _recover(data=self.hs_hostname, signature=signature)
+        rec_addr = _recover(data=self.hs_hostname.encode(), signature=signature)
         if not rec_addr or rec_addr != user_addr:
-            logger.error(
-                'invalid account password/signature. user=%r, signer=%r',
+            self.log.error(
+                "Invalid account password/signature. user=%r, expected=%r, recovered=%r",
                 user_id,
+                user_addr,
                 rec_addr,
             )
             defer.returnValue(False)
 
         localpart = user_id.split(":", 1)[0][1:]
-        logger.info('eth login! valid signature. user=%r', user_id)
+        self.log.info("Eth login, valid signature. user=%r", user_id)
 
         if not (yield self.account_handler.check_user_exists(user_id)):
-            logger.info('first user login, registering: user=%r', user_id)
+            self.log.info("First user login, registering: user=%r", user_id)
             yield self.account_handler.register(localpart=localpart)
 
         defer.returnValue(True)

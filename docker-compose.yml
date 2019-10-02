@@ -1,18 +1,89 @@
-# Only compose file versions >=2.2,<3 support the `scale` parameter
-version: "2.3"
+version: '2.3'
+
+x-defaults: &defaults
+  image: raidennetwork/raiden-services
+  env_file: .env
+  volumes:
+    - ${DATA_DIR:-./data}/state:/state
+    - ${DATA_DIR:-./data}/keystore:/keystore
 
 services:
+# raiden-services containers
+  pfs:
+    << : *defaults
+    command: ["python3", "-m", "pathfinding_service.cli"]
+    restart: always
+    ports:
+      - 6001:6000
+    environment:
+      - PFS_STATE_DB=/state/pfs-state.db
+      - PFS_HOST=0.0.0.0
+      - SERVER_NAME
+      - PFS_LOG_LEVEL=${LOG_LEVEL}
+      - PFS_KEYSTORE_FILE=/keystore/${KEYSTORE_FILE}
+      - PFS_PASSWORD=${PASSWORD}
+      - PFS_ETH_RPC=${ETH_RPC}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.frontend.rule=Host:pfs.${SERVER_NAME}"
+      - "traefik.default.backend.healthcheck.path=/api/v1/info"
+    healthcheck:
+      disable: true
+
+  ms:
+    << : *defaults
+    command: ["python3", "-m", "monitoring_service.cli"]
+    restart: always
+    ports:
+      - 6002:6000
+    environment:
+      - MS_STATE_DB=/state/ms-state.db
+      - MS_LOG_LEVEL=${LOG_LEVEL}
+      - MS_KEYSTORE_FILE=/keystore/${KEYSTORE_FILE}
+      - MS_PASSWORD=${PASSWORD}
+      - MS_ETH_RPC=${ETH_RPC}
+    healthcheck:
+      test: 'python3 -c "import sqlite3, sys; from time import sleep; conn=sqlite3.connect(\"/state/ms-state.db\"); r = lambda: conn.execute(\"select latest_commited_block from blockchain ORDER BY latest_commited_block DESC LIMIT 1;\").fetchone()[0]; one = r(); sleep(25); two = r(); print(two); sys.exit(0 if two > one else 1)"'
+
+  msrc:
+    << : *defaults
+    command: ["python3", "-m", "request_collector.cli"]
+    restart: always
+    ports:
+      - 6003:6000
+    environment:
+      - MSRC_STATE_DB=/state/ms-state.db
+      - MSRC_LOG_LEVEL=${LOG_LEVEL}
+      - MSRC_KEYSTORE_FILE=/keystore/${KEYSTORE_FILE}
+      - MSRC_PASSWORD=${PASSWORD}
+      - MSRC_CHAIN_ID=${CHAIN_ID}
+    depends_on:
+      ms:
+        condition: service_healthy
+    healthcheck:
+      disable: true
+  # This registers the service and stops afterwards
+  registration:
+    <<: *defaults
+    command: ["python3", "-m", "raiden_libs.register_service"]
+    environment:
+      - RDN_REGISTRY_LOG_LEVEL=${LOG_LEVEL}
+      - RDN_REGISTRY_KEYSTORE_FILE=/keystore/${KEYSTORE_FILE}
+      - RDN_REGISTRY_PASSWORD=${PASSWORD}
+      - RDN_REGISTRY_SERVICE_URL=${SERVER_NAME}
+      - RDN_REGISTRY_ETH_RPC=${ETH_RPC}
+
+# raiden-transport containers
   synapse:
     build:
       context: build/synapse
       args:
-        SYNAPSE_VERSION: v0.33.7
+        SYNAPSE_VERSION: v1.3.1
     image: raiden-network/synapse
     restart: always
-    ports:
-      - 8448:8448
     volumes:
       - ./config/synapse:/config
+      - ${DATA_DIR:-./data}/well-known:/data_well_known
       - ${DATA_DIR:-./data}/synapse:/data
     environment:
       - SERVER_NAME
@@ -20,8 +91,6 @@ services:
     depends_on:
       db:
         condition: service_healthy
-#      cert_extractor:
-#        condition: service_healthy
     labels:
       - "traefik.enable=true"
       - "traefik.default.port=8008"
@@ -52,6 +121,7 @@ services:
       - "traefik.enable=true"
       - "traefik.port=8008"
       - "traefik.frontend.rule=Host:${SERVER_NAME}; PathPrefix: /_matrix/client/{version:(v2_alpha|r0)}/sync, /_matrix/client/{version:(api/v1|v2_alpha|r0)}/events, /_matrix/client/{version:(api/v1|r0)}/initialSync, /_matrix/client/{version:(api/v1|r0)}/rooms/{room:[^/]+}/initialSync"
+      - "traefik.backend.loadbalancer.stickiness=true"
 
 #  federation_reader:
 #    image: raiden-network/synapse
@@ -106,7 +176,8 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.port=8008"
-      - "traefik.frontend.rule=Host:${SERVER_NAME}; PathPrefix: /_matrix/client/{version:(api/v1|r0|unstable)}/publicRooms"
+      - "traefik.frontend.rule=Host:${SERVER_NAME}; PathPrefix: /_matrix/client/versions, /_matrix/client/{version:(api/v1|r0|unstable)}/publicRooms, /_matrix/client/{version:(api/v1|r0|unstable)}/rooms/{room:.*}/joined_members, /_matrix/client/{version:(api/v1|r0|unstable)}/rooms/{room:.*}/context/{context:.*}, /_matrix/client/{version:(api/v1|r0|unstable)}/rooms/{room:.*}/members, /_matrix/client/{version:(api/v1|r0|unstable)}/rooms/{room:.*}/state, /_matrix/client/{version:(api/v1|r0|unstable)}/account/3pid, /_matrix/client/{version:(api/v1|r0|unstable)}/keys/query, /_matrix/client/{version:(api/v1|r0|unstable)}/keys/changes, /_matrix/client/{version:(api/v1|r0|unstable)}/voip/turnServer"
+      - "traefik.backend.loadbalancer.stickiness=true"
 
   user_dir:
     image: raiden-network/synapse
@@ -122,10 +193,12 @@ services:
     entrypoint: ["/synapse-venv/bin/python", "-m", "synapse.app.user_dir", "--config-path", "/config/synapse.yaml", "--config-path", "/config/workers/user_dir.yaml"]
     healthcheck:
       disable: true
+    scale: 4
     labels:
       - "traefik.enable=true"
       - "traefik.port=8008"
       - "traefik.frontend.rule=Host:${SERVER_NAME}; PathPrefix: /_matrix/client/{version:(api/v1|r0|unstable)}/user_directory/search"
+      - "traefik.backend.loadbalancer.stickiness=true"
 
   event_creator:
     image: raiden-network/synapse
@@ -145,8 +218,8 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.port=8008"
-      - "traefik.frontend.rule=Host:${SERVER_NAME}; PathPrefix: /_matrix/client/{version:(api/v1|r0|unstable)}/rooms/{room:.*}/send"
-
+      - "traefik.frontend.rule=Host:${SERVER_NAME}; PathPrefix: /_matrix/client/{version:(api/v1|r0|unstable)}/rooms/{room:.*}/send, /_matrix/client/{version:(api/v1|r0|unstable)}/rooms/{room:.*}/{action:(join|invite|leave|ban|unban|kick)}, /_matrix/client/{version:(api/v1|r0|unstable)}/join/, /_matrix/client/{version:(api/v1|r0|unstable)}/profile/"
+      - "traefik.backend.loadbalancer.stickiness=true"
   db:
     build:
       context: build/db
@@ -156,18 +229,43 @@ services:
     healthcheck:
       test: echo 'select 1' | psql -U postgres > /dev/null || exit 1
 
-#  cert_extractor:
-#    build:
-#      context: build/extract-certs
-#    restart: always
-#    volumes:
-#      - ${DATA_DIR:-./data}/traefik:/in:ro
-#      - ${DATA_DIR:-./data}/synapse:/out
-#    depends_on:
-#      traefik:
-#        condition: service_started
-#    command: /in/acme.json /out/keys
-
+  # Serves the .well-known/matrix/server file
+  well_known_server:
+    build:
+      context: build/well_known_server
+    restart: always
+    volumes:
+      - ${DATA_DIR:-./data}/well-known:/data
+    depends_on:
+      synapse:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.frontend.rule=Host:${SERVER_NAME}; PathPrefix: /.well-known/matrix"
+  purger:
+    image: python:3
+    restart: always
+    volumes:
+      - ./purge:/app
+      - /var/run/docker.sock:/var/run/docker.sock
+    working_dir: /app
+    depends_on:
+      synapse:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+    environment:
+      - PURGE_SLEEP_UNTIL=05:00:00
+      - MATRIX_DOCKER_RESTART_LABEL=purge_restart_container
+      - MATRIX_DB_URI=postgres://postgres@db:5432/synapse
+      - MATRIX_SERVER=http://synapse:8008
+      - SERVER_NAME
+      - MATRIX_ADMIN_PRIVATE_KEY_PASSWORD=
+      - MATRIX_ADMIN_PRIVATE_KEY_GENERATE=1
+      - MATRIX_KEEP_NEWER=15
+      - MATRIX_KEEP_MIN_MSGS=3000
+    command: bash purge.sh
+# common traefik
   traefik:
     image: traefik:1.7
     restart: always
@@ -180,35 +278,28 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     command: --acme.email=${LETSENCRYPT_EMAIL}
     depends_on:
-      - synapse
-      - synchrotron
-      - client_reader
-      - user_dir
-      - event_creator
+      synapse:
+        condition: service_healthy
+      well_known_server:
+        condition: service_healthy
+      synchrotron:
+        condition: service_started
+      client_reader:
+        condition: service_started
+      user_dir:
+        condition: service_started
+      event_creator:
+        condition: service_started
+      pfs:
+        condition: service_started
+      ms:
+        condition: service_healthy
+      msrc:
+        condition: service_started
+    healthcheck:
+      disable: true
     labels:
       - "traefik.enable=true"
       - "traefik.port=8080"
       - "traefik.frontend.rule=Host:proxy.${SERVER_NAME}"
       - "traefik.frontend.whiteList.sourceRange=${CIDR_ALLOW_PROXY}"
-
-  purger:
-    image: python:3
-    restart: always
-    volumes:
-      - ./purge:/app
-      - /var/run/docker.sock:/var/run/docker.sock
-    working_dir: /app
-    depends_on:
-      - synapse
-      - db
-    environment:
-      - PURGE_SLEEP_UNTIL=05:00:00
-      - MATRIX_DOCKER_RESTART_LABEL=purge_restart_container
-      - MATRIX_DB_URI=postgres://postgres@db:5432/synapse
-      - MATRIX_SERVER=http://synapse:8008
-      - SERVER_NAME
-      - MATRIX_ADMIN_PRIVATE_KEY_PASSWORD=
-      - MATRIX_ADMIN_PRIVATE_KEY_GENERATE=1
-      - MATRIX_KEEP_NEWER=15
-      - MATRIX_KEEP_MIN_MSGS=3000
-    command: bash purge.sh
