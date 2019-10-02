@@ -191,7 +191,7 @@ or contact us via email at contact@raiden.nework.
 
 ## Changelog
 
-- 2019-09-25 - `2019.9.0` - **Upgrade release**
+- 2019-10-02 - `2019.10.0` - **Upgrade release**
   - Add https://github.com/raiden-network/raiden-services services to the bundle
   - Upgrade Synapse to v1.3.1
   - Tune Postgres default parameters
