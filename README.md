@@ -191,6 +191,8 @@ or contact us via email at contact@raiden.nework.
 
 ## Changelog
 
+- 2019-10-07 - `2019.10.1` - **Upgrade release**
+  - Upgrade https://github.com/raiden-network/raiden-services image to `v0.4.0`
 - 2019-10-02 - `2019.10.0` - **Upgrade release**
   - Add https://github.com/raiden-network/raiden-services services to the bundle
   - Upgrade Synapse to v1.3.1
