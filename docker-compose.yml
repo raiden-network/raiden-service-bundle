@@ -78,7 +78,7 @@ services:
     build:
       context: build/synapse
       args:
-        SYNAPSE_VERSION: v1.3.1
+        SYNAPSE_VERSION: v1.4.0
     image: raiden-network/synapse
     restart: always
     volumes:
