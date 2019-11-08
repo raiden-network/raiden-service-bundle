@@ -10,6 +10,8 @@ x-versions:
     image: raidennetwork/raiden-services-bundle:2019.11.1-synapse
   well-known-server: &IMAGE_WELL_KNOWN_VERSION
     image: raidennetwork/raiden-services-bundle:2019.11.1-well_known_server
+  room_ensurer: &IMAGE_ROOM_ENSURER_VERSION
+    image: raidennetwork/raiden-services-bundle:nightly-room_ensurer
   traefik: &IMAGE_TRAEFIK_VERSION
     image: traefik:1.7
   purger: &IMAGE_PURGER_VERSION
@@ -124,6 +126,23 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.frontend.rule=Host:${SERVER_NAME}; PathPrefix: /.well-known/matrix"
+
+  room_ensurer:
+    << : *IMAGE_ROOM_ENSURER_VERSION
+    restart: always
+    volumes:
+      - ./config/synapse:/config
+    depends_on:
+      synapse:
+        condition: service_healthy
+    command:
+      - "--own-server"
+      - "${SERVER_NAME}"
+      - "--log-level"
+      - "DEBUG"
+      - "--credentials-file"
+      - "/config/admin_user_cred.json"
+
   purger:
     << : *IMAGE_PURGER_VERSION
     restart: always
@@ -147,6 +166,7 @@ services:
       - MATRIX_KEEP_NEWER=15
       - MATRIX_KEEP_MIN_MSGS=3000
     command: bash purge.sh
+
 # common traefik
   traefik:
     << : *IMAGE_TRAEFIK_VERSION
