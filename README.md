@@ -2,10 +2,10 @@
 
 ## What is this repository
 
-This repository contains the documentation and configuration necessary to run a 
+This repository contains the documentation and configuration necessary to run a
 Raiden Transport Matrix server.
 
-**Current release:** [2019.10.1](https://github.com/raiden-network/raiden-transport/tree/2019.10.1)
+**Current release:** [2019.10.1](https://github.com/raiden-network/raiden-service-bundle/tree/2019.10.1)
 
 ## Table of Contents
 
@@ -20,15 +20,15 @@ Raiden Transport Matrix server.
 
 ## Overview
 
-The Raiden Network uses a federation of [Matrix](https://matrix.org) servers as it's transport 
-layer. To ensure reliability, availability and neutrality it is desirable that those servers are 
+The Raiden Network uses a federation of [Matrix](https://matrix.org) servers as it's transport
+layer. To ensure reliability, availability and neutrality it is desirable that those servers are
 being operated by multiple independent entities.
 
-Therefore we provide this repository which allows easy setup of such a transport server. 
-It uses docker and docker-compose for easy installation and upgrades. 
+Therefore we provide this repository which allows easy setup of such a transport server.
+It uses docker and docker-compose for easy installation and upgrades.
 
-Currently only this single-server configuration is supported, in the future we may also 
-provide configurations with services split among multiple servers. 
+Currently only this single-server configuration is supported, in the future we may also
+provide configurations with services split among multiple servers.
 
 ### Used software
 
@@ -53,14 +53,14 @@ provide configurations with services split among multiple servers.
           |
 +---------v---------+
 |                   |        Federation to other
-|      Traefik    +-+----->  Raiden Matrix servers 
-|                 | |       
+|      Traefik    +-+----->  Raiden Matrix servers
+|                 | |
 +---------+-------+-+---------+
           |       |           |
 +---------v-------v-+   +-----v----------------+
 |                   |   |                      |
 |      Synapse      |   |  Raiden Pathfinding  |
-|                   |   |                      | 
+|                   |   |                      |
 +---------+---------+   +----------------------+
           |
 +---------v---------+
@@ -71,26 +71,26 @@ provide configurations with services split among multiple servers.
 ```
 
 
-We use Traefik as a reverse proxy and also utilize it's capability of automatically provisiong 
+We use Traefik as a reverse proxy and also utilize it's capability of automatically provisiong
 Let's Encrypt TLS certificates.
 
 The Synapse server is being run in the so-called split worker configuration which increases throughput.
 
-The database stores the message data. Since the transport layer is considered ephemeral in Raiden it 
-is not necessary to arrange for backups of the database data. 
+The database stores the message data. Since the transport layer is considered ephemeral in Raiden it
+is not necessary to arrange for backups of the database data.
 
 ### Network
 
 After a successful deployment the following ports will be in use:
 
 - 80 - HTTP
-  - Redirects to HTTPS 
+  - Redirects to HTTPS
   - Let's Encrypt HTTP challenge for certificate provisioning
-- 443 - HTTPS 
+- 443 - HTTPS
   - Synapse web and API client access
   - Synapse Server-to-Server federation
   - Raiden Pathfinding Server (on subdomain `pfs.$SERVER_NAME`)
-  - Metrics export (IP restricted, see below) 
+  - Metrics export (IP restricted, see below)
 
 ## Requirements
 
@@ -102,7 +102,7 @@ Minimum recommended for a production setup:
 -  8 Cores
 - 50 GiB SSD
 
-Note: The default Postgres configuration assumes 16GiB of system RAM   
+Note: The default Postgres configuration assumes 16GiB of system RAM
 
 ### Software
 
@@ -111,15 +111,15 @@ Note: The default Postgres configuration assumes 16GiB of system RAM
 
 ### Other
 
-- A domain (or subdomain) for exclusive use by this server   
+- A domain (or subdomain) for exclusive use by this server
 
 ## Installation
 
 ### Preparation
 
 1. Provision a server that meets the [hardware](#hardware) and [software](#software) requirements listed above.
-1. Ensure a domain (or subdomain) is available 
-  
+1. Ensure a domain (or subdomain) is available
+
    Examples:
    - raidentransport.somecompany.tld
    - raidentransport-somecompany.tld
@@ -131,16 +131,16 @@ Note: The default Postgres configuration assumes 16GiB of system RAM
 
 ### Installing
 
-1. Clone the [current release version of this repository](https://github.com/raiden-network/raiden-transport/tree/2019.10.1)
+1. Clone the [current release version of this repository](https://github.com/raiden-network/raiden-service-bundle/tree/2019.10.1)
    to a suitable location on the server:
-   
+
    ```shell
-   git clone -b 2019.10.1 https://github.com/raiden-network/raiden-transport.git
+   git clone -b 2019.10.1 https://github.com/raiden-network/raiden-service-bundle.git
    ```
 1. Copy `.env.template` to `.env` and modify the values to fit your setup (see inline comments for details)
-   - We would appreciate it if you allow us access to the monitoring interfaces 
+   - We would appreciate it if you allow us access to the monitoring interfaces
      (to do that uncomment the default values of the `CIDR_ALLOW_METRICS` and `CIDR_ALLOW_PROXY` settings).
-   - We also recommend that you provide your own monitoring. The setup of which is currently out of scope of this document. 
+   - We also recommend that you provide your own monitoring. The setup of which is currently out of scope of this document.
 1. Run `docker-compose build` to build the containers
 1. Run `docker-compose up -d` to start all services
    - The services are configured to automatically restart in case of a crash or reboot
@@ -148,12 +148,12 @@ Note: The default Postgres configuration assumes 16GiB of system RAM
 
 ### Submit
 
-1. [Create an issue](https://github.com/raiden-network/raiden-transport/issues/new) and submit the 
-   domain / URL of the newly deployed server for inclusion in the list of known servers.    
+1. [Create an issue](https://github.com/raiden-network/raiden-service-bundle/issues/new) and submit the
+   domain / URL of the newly deployed server for inclusion in the list of known servers.
 
 ## Upgrades
 
-To upgrade to a new release please check the [changelog](#changelog) for any necessary 
+To upgrade to a new release please check the [changelog](#changelog) for any necessary
 configuration changes and then run the following commands:
 
 ```shell
@@ -172,8 +172,8 @@ docker-compose up -d
 
 ### Protection against Spam / (D)DoS attacks
 
-There is currently only some protection against Spam and / or DDoS attacks. 
-This will be addressed in future updates. 
+There is currently only some protection against Spam and / or DDoS attacks.
+This will be addressed in future updates.
 
 ### Known servers
 
@@ -185,7 +185,7 @@ We intend to change this in the future to use a decentralized scheme (for exampl
 
 ## Contact / Troubleshooting
 
-To report issues or request help with the setup please [open an issue](https://github.com/raiden-network/raiden-transport/issues/new)
+To report issues or request help with the setup please [open an issue](https://github.com/raiden-network/raiden-service-bundle/issues/new)
 or contact us via email at contact@raiden.nework.
 
 
@@ -201,7 +201,7 @@ or contact us via email at contact@raiden.nework.
     - Port 8448 is no longer needed
 - 2018-12-19 - `2018.12.0` - **Maintenance release**
   - purger.py restart improvements
-- 2018-10-19 - `2018.10.0` - **Maintenence release** 
+- 2018-10-19 - `2018.10.0` - **Maintenence release**
   - Add new servers to known list
   - Upgrade Synapse to 0.33.7
   - Automatically purge historic state and restart service once a day, removing the need for an external cron service
