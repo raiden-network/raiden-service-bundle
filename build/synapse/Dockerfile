@@ -3,17 +3,14 @@ LABEL maintainer="Raiden Network Team <contact@raiden.network>"
 
 ARG SYNAPSE_VERSION
 
-RUN cd /opt && \
-        wget https://github.com/matrix-org/synapse/archive/develop.zip && \
-        unzip develop.zip && \
-        python -m venv /synapse-venv && \
-        /synapse-venv/bin/pip install --upgrade pip && \
-        /synapse-venv/bin/pip install -e synapse-develop[postgres]
+RUN \
+    python -m venv /synapse-venv && \
+    /synapse-venv/bin/pip install "matrix-synapse[postgres]==${SYNAPSE_VERSION}"
 
 RUN /synapse-venv/bin/pip install psycopg2 coincurve pycryptodome
 
 # Temporary patch until raiden-network/raiden#4634 is resolved
-RUN sed -i -E 's/^MAX_DISPLAYNAME_LEN = 100$/MAX_DISPLAYNAME_LEN = 200/' /opt/synapse-develop/synapse/handlers/profile.py
+RUN sed -i -E 's/^MAX_DISPLAYNAME_LEN = 100$/MAX_DISPLAYNAME_LEN = 200/' /synapse-venv/lib/python3.7/site-packages/synapse/handlers/profile.py
 
 COPY eth_auth_provider.py /synapse-venv/lib/python3.7/site-packages/
 COPY synapse-entrypoint.sh /bin/
