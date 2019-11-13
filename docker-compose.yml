@@ -1,7 +1,7 @@
 version: '2.3'
 
 x-defaults: &defaults
-  image: raidennetwork/raiden-services:v0.4.0
+  image: raidennetwork/raiden-services:stable
   env_file: .env
   volumes:
     - ${DATA_DIR:-./data}/state:/state
@@ -75,11 +75,7 @@ services:
 
 # raiden-transport containers
   synapse:
-    build:
-      context: build/synapse
-      args:
-        SYNAPSE_VERSION: v1.3.1
-    image: raiden-network/synapse
+    image: raidennetwork/raiden-services-bundle:nightly-synapse
     restart: always
     volumes:
       - ./config/synapse:/config
@@ -103,7 +99,7 @@ services:
       - "purge_restart_container=true"
 
   synchrotron:
-    image: raiden-network/synapse
+    image: raidennetwork/raiden-services-bundle:nightly-synapse
     restart: always
     volumes:
       - ./config/synapse:/config
@@ -124,7 +120,7 @@ services:
       - "traefik.backend.loadbalancer.stickiness=true"
 
 #  federation_reader:
-#    image: raiden-network/synapse
+#    image: raidennetwork/raiden-services-bundle:nightly-synapse
 #    restart: always
 #    volumes:
 #      - ./config/synapse:/config
@@ -145,7 +141,7 @@ services:
 #      - "traefik.frontend.rule=Host:${SERVER_NAME}; PathPrefix: /_matrix/federation/v1/{type:(event|state|state_ids|backfill|get_missing_events|publicRooms)}"
 #
 #  federation_sender:
-#    image: raiden-network/synapse
+#    image: raidennetwork/raiden-services-bundle:nightly-synapse
 #    restart: always
 #    volumes:
 #      - ./config/synapse:/config
@@ -160,7 +156,7 @@ services:
 #      disable: true
 #
   client_reader:
-    image: raiden-network/synapse
+    image: raidennetwork/raiden-services-bundle:nightly-synapse
     restart: always
     volumes:
       - ./config/synapse:/config
@@ -180,7 +176,7 @@ services:
       - "traefik.backend.loadbalancer.stickiness=true"
 
   user_dir:
-    image: raiden-network/synapse
+    image: raidennetwork/raiden-services-bundle:nightly-synapse
     restart: always
     volumes:
       - ./config/synapse:/config
@@ -201,7 +197,7 @@ services:
       - "traefik.backend.loadbalancer.stickiness=true"
 
   event_creator:
-    image: raiden-network/synapse
+    image: raidennetwork/raiden-services-bundle:nightly-synapse
     restart: always
     volumes:
       - ./config/synapse:/config
@@ -221,8 +217,7 @@ services:
       - "traefik.frontend.rule=Host:${SERVER_NAME}; PathPrefix: /_matrix/client/{version:(api/v1|r0|unstable)}/rooms/{room:.*}/send, /_matrix/client/{version:(api/v1|r0|unstable)}/rooms/{room:.*}/{action:(join|invite|leave|ban|unban|kick)}, /_matrix/client/{version:(api/v1|r0|unstable)}/join/, /_matrix/client/{version:(api/v1|r0|unstable)}/profile/"
       - "traefik.backend.loadbalancer.stickiness=true"
   db:
-    build:
-      context: build/db
+    image: raidennetwork/raiden-services-bundle:nightly-db
     restart: always
     volumes:
       - ${DATA_DIR:-./data}/db:/var/lib/postgresql/data
@@ -231,8 +226,7 @@ services:
 
   # Serves the .well-known/matrix/server file
   well_known_server:
-    build:
-      context: build/well_known_server
+    image: raidennetwork/raiden-services-bundle:nightly-well_known_server
     restart: always
     volumes:
       - ${DATA_DIR:-./data}/well-known:/data
