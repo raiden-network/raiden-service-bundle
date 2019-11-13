@@ -20,7 +20,7 @@ Raiden Transport Matrix server.
 
 ## Overview
 
-The Raiden Network uses a federation of [Matrix](https://matrix.org) servers as it's transport
+The Raiden Network uses a federation of [Matrix](https://matrix.org) servers as its transport
 layer. To ensure reliability, availability and neutrality it is desirable that those servers are
 being operated by multiple independent entities.
 
