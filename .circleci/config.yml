@@ -9,9 +9,10 @@ jobs:
       - run:
           name: Build Docker image
           command: |
+            BUILD_ARGS="SYNAPSE_VERSION=v1.4.1" \
             IMAGE_NAME=raidennetwork/raiden-services-bundle \
             DOCKER_TAG=${CIRCLE_TAG:-nightly}-synapse; \
-            docker build -t ${IMAGE_NAME}:${DOCKER_TAG} build/synapse ; \
+            docker build --build-arg ${BUILD_ARGS} -t ${IMAGE_NAME}:${DOCKER_TAG} build/synapse ; \
             echo "$DEVOPS_DOCKERHUB_TOKEN" | docker login -u brainbotdevops --password-stdin ; \
             docker push ${IMAGE_NAME}:${DOCKER_TAG}
   build_db:
