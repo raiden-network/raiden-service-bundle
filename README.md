@@ -27,7 +27,7 @@ being operated by multiple independent entities.
 Therefore we provide this repository which allows easy setup of such a transport server.
 It uses docker and docker-compose for easy installation and upgrades.
 
-Currently only this single-server configuration is supported, in the future we may also
+Currently only this single-server configuration is supported; in the future we may also
 provide configurations with services split among multiple servers.
 
 ### Used software
@@ -37,7 +37,7 @@ provide configurations with services split among multiple servers.
 - Synapse
 - Postgres
 - Traefik
-- Raiden Services
+- Raiden Services (Pathfinding, Monitoring)
 
 ### Structure
 
@@ -47,31 +47,31 @@ provide configurations with services split among multiple servers.
 |                   |
 |   Raiden clients  |
 |                   |
-+---------+---------+
-          |
-==========|==========
-          |
-+---------v---------+
-|                   |        Federation to other
-|      Traefik    +-+----->  Raiden Matrix servers
++---+-----------+---+
+    |matrix://  |pfs://
+====|===========|====
+    |           |
++---v-----------v---+                       Federation to
+|                 +-+-------------------->  other Raiden
+|      Traefik    | |                       Matrix servers
 |                 | |
 +---------+-------+-+---------+
           |       |           |
-+---------v-------v-+   +-----v----------------+
-|                   |   |                      |
-|      Synapse      |   |  Raiden Pathfinding  |
-|                   |   |                      |
-+---------+---------+   +----------------------+
-          |
-+---------v---------+
-|                   |
-|     Postgres      |
-|                   |
-+-------------------+
++---------v-------v-+   +-----v----------------+ +---------------------+
+|                   |   |                      | |                     |
+|      Synapse      |   |  Raiden Pathfinding  | |  Raiden Monitoring  |
+|                   |   |                      | |                     |
++---------+---------+   +-------------------+--+ +-+-------------------+
+          |                                 |      |
++---------v---------+                     +-v- - - v -+
+|                   |                     |
+|     Postgres      |                        ETH_RPC  |
+|                   |                     |
++-------------------+                     + - - - - - +
 ```
 
 
-We use Traefik as a reverse proxy and also utilize it's capability of automatically provisiong
+We use Traefik as a reverse proxy and also utilize its capability of automatically provisioning
 Let's Encrypt TLS certificates.
 
 The Synapse server is being run in the so-called split worker configuration which increases throughput.
@@ -141,10 +141,15 @@ Note: The default Postgres configuration assumes 16GiB of system RAM
    - We would appreciate it if you allow us access to the monitoring interfaces
      (to do that uncomment the default values of the `CIDR_ALLOW_METRICS` and `CIDR_ALLOW_PROXY` settings).
    - We also recommend that you provide your own monitoring. The setup of which is currently out of scope of this document.
+1. Make sure, that the account, configured in `KEYSTORE_FILE`, has enough funding to register as a service operator.
 1. Run `docker-compose build` to build the containers
 1. Run `docker-compose up -d` to start all services
    - The services are configured to automatically restart in case of a crash or reboot
 1. Verify the service is up by opening the domain in a browser. You should see a page with the Matrix logo.
+
+### Troubleshooting
+After starting, you can run `docker-compose ps` -- if any services are not in `Up`, `Up (healthy)` or `Exit 0` state, you should check the respective logs for configuration errors.
+Note: some services might need a few minutes to become healthy.
 
 ### Submit
 
@@ -159,7 +164,6 @@ configuration changes and then run the following commands:
 ```shell
 git fetch origin --tags
 git reset --hard <new-release-tag>
-docker-compose build --pull
 docker-compose pull
 docker-compose up -d
 ```
@@ -190,7 +194,10 @@ or contact us via email at contact@raiden.nework.
 
 
 ## Changelog
-
+- WIP - `WIP` - **Upgrade release**
+  - Upgrade Synapse to v1.4.1
+  - Use `stable` release from https://github.com/raiden-network/raiden-services
+  - Use version tagged public images instead of building locally.
 - 2019-10-07 - `2019.10.1` - **Upgrade release**
   - Upgrade https://github.com/raiden-network/raiden-services image to `v0.4.0`
 - 2019-10-02 - `2019.10.0` - **Upgrade release**
