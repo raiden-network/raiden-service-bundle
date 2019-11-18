@@ -195,7 +195,7 @@ or contact us via email at contact@raiden.nework.
 
 ## Changelog
 - WIP - `WIP` - **Upgrade release**
-  - Upgrade Synapse to v1.4.1
+  - Upgrade Synapse to v1.5.1
   - Use `stable` release from https://github.com/raiden-network/raiden-services
   - Use version tagged public images instead of building locally.
 - 2019-10-07 - `2019.10.1` - **Upgrade release**

@@ -9,7 +9,7 @@ jobs:
       - run:
           name: Build Docker image
           command: |
-            BUILD_ARGS="SYNAPSE_VERSION=v1.4.1" \
+            BUILD_ARGS="SYNAPSE_VERSION=v1.5.1" \
             IMAGE_NAME=raidennetwork/raiden-services-bundle \
             DOCKER_TAG=${CIRCLE_TAG:-nightly}-synapse; \
             docker build --build-arg ${BUILD_ARGS} -t ${IMAGE_NAME}:${DOCKER_TAG} build/synapse ; \
