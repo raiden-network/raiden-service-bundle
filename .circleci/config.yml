@@ -1,6 +1,9 @@
 version: 2.1
+
 jobs:
   build_synapse:
+    environment:
+      BASH_ENV: BUILD_VERSIONS
     docker:
       - image: circleci/buildpack-deps:stretch
     steps:
@@ -9,13 +12,14 @@ jobs:
       - run:
           name: Build Docker image
           command: |
-            BUILD_ARGS="SYNAPSE_VERSION=v1.5.1" \
             IMAGE_NAME=raidennetwork/raiden-services-bundle \
             DOCKER_TAG=${CIRCLE_TAG:-nightly}-synapse; \
-            docker build --build-arg ${BUILD_ARGS} -t ${IMAGE_NAME}:${DOCKER_TAG} build/synapse ; \
+            docker build --build-arg SYNAPSE_VERSION -t ${IMAGE_NAME}:${DOCKER_TAG} build/synapse ; \
             echo "$DEVOPS_DOCKERHUB_TOKEN" | docker login -u brainbotdevops --password-stdin ; \
             docker push ${IMAGE_NAME}:${DOCKER_TAG}
   build_db:
+    environment:
+      BASH_ENV: BUILD_VERSIONS
     docker:
       - image: circleci/buildpack-deps:stretch
     steps:
@@ -26,10 +30,12 @@ jobs:
           command: |
             IMAGE_NAME=raidennetwork/raiden-services-bundle \
             DOCKER_TAG=${CIRCLE_TAG:-nightly}-db; \
-            docker build -t ${IMAGE_NAME}:${DOCKER_TAG} build/db ; \
+            docker build --build-arg POSTGRES_VERSION -t ${IMAGE_NAME}:${DOCKER_TAG} build/db ; \
             echo "$DEVOPS_DOCKERHUB_TOKEN" | docker login -u brainbotdevops --password-stdin ; \
             docker push ${IMAGE_NAME}:${DOCKER_TAG}
   build_well_known:
+    environment:
+      BASH_ENV: BUILD_VERSIONS
     docker:
       - image: circleci/buildpack-deps:stretch
     steps:
@@ -40,7 +46,7 @@ jobs:
           command: |
             IMAGE_NAME=raidennetwork/raiden-services-bundle \
             DOCKER_TAG=${CIRCLE_TAG:-nightly}-well_known_server; \
-            docker build -t ${IMAGE_NAME}:${DOCKER_TAG} build/well_known_server ; \
+            docker build --build-arg NGINX_VERSION -t ${IMAGE_NAME}:${DOCKER_TAG} build/well_known_server ; \
             echo "$DEVOPS_DOCKERHUB_TOKEN" | docker login -u brainbotdevops --password-stdin ; \
             docker push ${IMAGE_NAME}:${DOCKER_TAG}
 
