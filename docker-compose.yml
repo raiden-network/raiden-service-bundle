@@ -1,7 +1,23 @@
 version: '2.3'
 
-x-defaults: &defaults
-  image: raidennetwork/raiden-services:stable
+# versions: change these in order to pin versions for a certain releases
+x-versions:
+  services: &IMAGE_RAIDEN_SERVICES_VERSION
+    image: raidennetwork/raiden-services:stable
+  db: &IMAGE_DB_VERSION
+    image: raidennetwork/raiden-services-bundle:nightly-db
+  synapse: &IMAGE_SYNAPSE_VERSION
+    image: raidennetwork/raiden-services-bundle:nightly-synapse
+  well-known-server: &IMAGE_WELL_KNOWN_VERSION
+    image: raidennetwork/raiden-services-bundle:nightly-well_known_server
+  traefik: &IMAGE_TRAEFIK_VERSION
+    image: traefik:1.7
+  purger: &IMAGE_PURGER_VERSION
+    image: python:3
+# /versions
+
+x-defaults: &services-defaults
+  <<: *IMAGE_RAIDEN_SERVICES_VERSION
   env_file: .env
   volumes:
     - ${DATA_DIR:-./data}/state:/state
@@ -10,7 +26,7 @@ x-defaults: &defaults
 services:
 # raiden-services containers
   pfs:
-    << : *defaults
+    << : *services-defaults
     command: ["python3", "-m", "pathfinding_service.cli"]
     restart: always
     ports:
@@ -31,7 +47,7 @@ services:
       disable: true
 
   ms:
-    << : *defaults
+    << : *services-defaults
     command: ["python3", "-m", "monitoring_service.cli"]
     restart: always
     ports:
@@ -46,7 +62,7 @@ services:
       test: 'python3 -c "import sqlite3, sys; from time import sleep; conn=sqlite3.connect(\"/state/ms-state.db\"); r = lambda: conn.execute(\"select latest_commited_block from blockchain ORDER BY latest_commited_block DESC LIMIT 1;\").fetchone()[0]; one = r(); sleep(25); two = r(); print(two); sys.exit(0 if two > one else 1)"'
 
   msrc:
-    << : *defaults
+    << : *services-defaults
     command: ["python3", "-m", "request_collector.cli"]
     restart: always
     ports:
@@ -64,7 +80,7 @@ services:
       disable: true
   # This registers the service and stops afterwards
   registration:
-    <<: *defaults
+    <<: *services-defaults
     command: ["python3", "-m", "raiden_libs.register_service"]
     environment:
       - RDN_REGISTRY_LOG_LEVEL=${LOG_LEVEL}
@@ -75,7 +91,7 @@ services:
 
 # raiden-transport containers
   synapse:
-    image: raidennetwork/raiden-services-bundle:nightly-synapse
+    << : *IMAGE_SYNAPSE_VERSION
     restart: always
     volumes:
       - ./config/synapse:/config
@@ -99,7 +115,7 @@ services:
       - "purge_restart_container=true"
 
   synchrotron:
-    image: raidennetwork/raiden-services-bundle:nightly-synapse
+    << : *IMAGE_SYNAPSE_VERSION
     restart: always
     volumes:
       - ./config/synapse:/config
@@ -120,7 +136,7 @@ services:
       - "traefik.backend.loadbalancer.stickiness=true"
 
 #  federation_reader:
-#    image: raidennetwork/raiden-services-bundle:nightly-synapse
+#    << : *IMAGE_SYNAPSE_VERSION
 #    restart: always
 #    volumes:
 #      - ./config/synapse:/config
@@ -141,7 +157,7 @@ services:
 #      - "traefik.frontend.rule=Host:${SERVER_NAME}; PathPrefix: /_matrix/federation/v1/{type:(event|state|state_ids|backfill|get_missing_events|publicRooms)}"
 #
 #  federation_sender:
-#    image: raidennetwork/raiden-services-bundle:nightly-synapse
+#    << : *IMAGE_SYNAPSE_VERSION
 #    restart: always
 #    volumes:
 #      - ./config/synapse:/config
@@ -156,7 +172,7 @@ services:
 #      disable: true
 #
   client_reader:
-    image: raidennetwork/raiden-services-bundle:nightly-synapse
+    << : *IMAGE_SYNAPSE_VERSION
     restart: always
     volumes:
       - ./config/synapse:/config
@@ -176,7 +192,7 @@ services:
       - "traefik.backend.loadbalancer.stickiness=true"
 
   user_dir:
-    image: raidennetwork/raiden-services-bundle:nightly-synapse
+    << : *IMAGE_SYNAPSE_VERSION
     restart: always
     volumes:
       - ./config/synapse:/config
@@ -197,7 +213,7 @@ services:
       - "traefik.backend.loadbalancer.stickiness=true"
 
   event_creator:
-    image: raidennetwork/raiden-services-bundle:nightly-synapse
+    << : *IMAGE_SYNAPSE_VERSION
     restart: always
     volumes:
       - ./config/synapse:/config
@@ -217,7 +233,7 @@ services:
       - "traefik.frontend.rule=Host:${SERVER_NAME}; PathPrefix: /_matrix/client/{version:(api/v1|r0|unstable)}/rooms/{room:.*}/send, /_matrix/client/{version:(api/v1|r0|unstable)}/rooms/{room:.*}/{action:(join|invite|leave|ban|unban|kick)}, /_matrix/client/{version:(api/v1|r0|unstable)}/join/, /_matrix/client/{version:(api/v1|r0|unstable)}/profile/"
       - "traefik.backend.loadbalancer.stickiness=true"
   db:
-    image: raidennetwork/raiden-services-bundle:nightly-db
+    << : *IMAGE_DB_VERSION
     restart: always
     volumes:
       - ${DATA_DIR:-./data}/db:/var/lib/postgresql/data
@@ -226,7 +242,7 @@ services:
 
   # Serves the .well-known/matrix/server file
   well_known_server:
-    image: raidennetwork/raiden-services-bundle:nightly-well_known_server
+    << : *IMAGE_WELL_KNOWN_VERSION
     restart: always
     volumes:
       - ${DATA_DIR:-./data}/well-known:/data
@@ -237,7 +253,7 @@ services:
       - "traefik.enable=true"
       - "traefik.frontend.rule=Host:${SERVER_NAME}; PathPrefix: /.well-known/matrix"
   purger:
-    image: python:3
+    << : *IMAGE_PURGER_VERSION
     restart: always
     volumes:
       - ./purge:/app
@@ -261,7 +277,7 @@ services:
     command: bash purge.sh
 # common traefik
   traefik:
-    image: traefik:1.7
+    << : *IMAGE_TRAEFIK_VERSION
     restart: always
     ports:
       - 80:80
