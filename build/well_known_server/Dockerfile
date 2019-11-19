@@ -1,4 +1,6 @@
-FROM nginx:1.17
+# configure this in ./BUILD_VERSIONS
+ARG NGINX_VERSION
+FROM nginx:${NGINX_VERSION}
 
 LABEL maintainer="Raiden Network Team <contact@raiden.network>"
 
