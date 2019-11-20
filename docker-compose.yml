@@ -78,16 +78,6 @@ services:
         condition: service_healthy
     healthcheck:
       disable: true
-  # This registers the service and stops afterwards
-  registration:
-    <<: *services-defaults
-    command: ["python3", "-m", "raiden_libs.register_service"]
-    environment:
-      - RDN_REGISTRY_LOG_LEVEL=${LOG_LEVEL}
-      - RDN_REGISTRY_KEYSTORE_FILE=/keystore/${KEYSTORE_FILE}
-      - RDN_REGISTRY_PASSWORD=${PASSWORD}
-      - RDN_REGISTRY_SERVICE_URL=${SERVER_NAME}
-      - RDN_REGISTRY_ETH_RPC=${ETH_RPC}
 
 # raiden-transport containers
   synapse:

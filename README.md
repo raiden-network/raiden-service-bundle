@@ -142,7 +142,7 @@ Note: The default Postgres configuration assumes 16GiB of system RAM
      (to do that uncomment the default values of the `CIDR_ALLOW_METRICS` and `CIDR_ALLOW_PROXY` settings).
    - We also recommend that you provide your own monitoring. The setup of which is currently out of scope of this document.
 1. Make sure, that the account, configured in `KEYSTORE_FILE`, has enough funding to register as a service operator.
-1. Run `docker-compose build` to build the containers
+1. If you haven't done so before, run `./register-service-provider.sh` (it uses configuration values from `.env`).
 1. Run `docker-compose up -d` to start all services
    - The services are configured to automatically restart in case of a crash or reboot
 1. Verify the service is up by opening the domain in a browser. You should see a page with the Matrix logo.
@@ -151,7 +151,7 @@ Note: The default Postgres configuration assumes 16GiB of system RAM
 After starting, you can run `docker-compose ps` -- if any services are not in `Up`, `Up (healthy)` or `Exit 0` state, you should check the respective logs for configuration errors.
 Note: some services might need a few minutes to become healthy.
 
-### Submit
+### Submit a Transport Server to the federation
 
 1. [Create an issue](https://github.com/raiden-network/raiden-service-bundle/issues/new) and submit the
    domain / URL of the newly deployed server for inclusion in the list of known servers.
@@ -198,6 +198,8 @@ or contact us via email at contact@raiden.nework.
   - Upgrade Synapse to v1.5.1
   - Use `stable` release from https://github.com/raiden-network/raiden-services
   - Use version tagged public images instead of building locally.
+  - Make all bundled software versions easier to maintain (`BUILD_VERSIONS` & `docker-compose.yml::x-versions`).
+  - Removed auto registration, added interactive registration script (`./register-service-provider.sh`).
 - 2019-10-07 - `2019.10.1` - **Upgrade release**
   - Upgrade https://github.com/raiden-network/raiden-services image to `v0.4.0`
 - 2019-10-02 - `2019.10.0` - **Upgrade release**
