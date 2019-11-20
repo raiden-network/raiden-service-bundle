@@ -1,4 +1,6 @@
 ## Changelog
+- 2019-11-20 - `2019.11.1` - **Upgrade release**
+  - This release fixes some issues with the release process of the previous version `2019.11.0`.
 - 2019-11-20 - `2019.11.0` - **Upgrade release**
   - Upgrade Synapse to v1.5.1
   - Use `stable` release from https://github.com/raiden-network/raiden-services

@@ -5,11 +5,11 @@ x-versions:
   services: &IMAGE_RAIDEN_SERVICES_VERSION
     image: raidennetwork/raiden-services:stable
   db: &IMAGE_DB_VERSION
-    image: raidennetwork/raiden-services-bundle:2019.11.0-db
+    image: raidennetwork/raiden-services-bundle:2019.11.1-db
   synapse: &IMAGE_SYNAPSE_VERSION
-    image: raidennetwork/raiden-services-bundle:2019.11.0-synapse
+    image: raidennetwork/raiden-services-bundle:2019.11.1-synapse
   well-known-server: &IMAGE_WELL_KNOWN_VERSION
-    image: raidennetwork/raiden-services-bundle:2019.11.0-well_known_server
+    image: raidennetwork/raiden-services-bundle:2019.11.1-well_known_server
   traefik: &IMAGE_TRAEFIK_VERSION
     image: traefik:1.7
   purger: &IMAGE_PURGER_VERSION
