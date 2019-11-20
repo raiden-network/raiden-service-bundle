@@ -1,5 +1,5 @@
 ## Changelog
-- WIP - `WIP` - **Upgrade release**
+- 2019-11-20 - `2019.11.0` - **Upgrade release**
   - Upgrade Synapse to v1.5.1
   - Use `stable` release from https://github.com/raiden-network/raiden-services
   - Use version tagged public images instead of building locally.
