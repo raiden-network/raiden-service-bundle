@@ -5,7 +5,7 @@
 This repository contains the documentation and configuration necessary to run a
 Raiden Transport Matrix server.
 
-**Current release:** [2019.10.1](https://github.com/raiden-network/raiden-service-bundle/tree/2019.10.1)
+**Current release:** [2019.11.0](https://github.com/raiden-network/raiden-service-bundle/tree/2019.11.0)
 
 ## Table of Contents
 
@@ -131,11 +131,11 @@ Note: The default Postgres configuration assumes 16GiB of system RAM
 
 ### Installing
 
-1. Clone the [current release version of this repository](https://github.com/raiden-network/raiden-service-bundle/tree/2019.10.1)
+1. Clone the [current release version of this repository](https://github.com/raiden-network/raiden-service-bundle/tree/2019.11.0)
    to a suitable location on the server:
 
    ```shell
-   git clone -b 2019.10.1 https://github.com/raiden-network/raiden-service-bundle.git
+   git clone -b 2019.11.0 https://github.com/raiden-network/raiden-service-bundle.git
    ```
 1. Copy `.env.template` to `.env` and modify the values to fit your setup (see inline comments for details)
    - We would appreciate it if you allow us access to the monitoring interfaces
