@@ -148,6 +148,3 @@ database:
     host: db
     cp_min: 5
     cp_max: 20
-
-# This is handled by a worker
-update_user_directory: False
