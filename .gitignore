@@ -1,0 +1,3 @@
+# ./data is used to store mounted volumes for the containers, which must not be
+# commited to the repo.
+./data
