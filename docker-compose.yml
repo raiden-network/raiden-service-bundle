@@ -164,14 +164,6 @@ services:
         condition: service_healthy
       well_known_server:
         condition: service_healthy
-      synchrotron:
-        condition: service_started
-      client_reader:
-        condition: service_started
-      user_dir:
-        condition: service_started
-      event_creator:
-        condition: service_started
       pfs:
         condition: service_started
       ms:
