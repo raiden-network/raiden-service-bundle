@@ -84,7 +84,7 @@ services:
     << : *IMAGE_SYNAPSE_VERSION
     restart: always
     volumes:
-      - ./config/synapse:/config
+      - ${DATA_DIR:-./data}/config/synapse:/config
       - ${DATA_DIR:-./data}/well-known:/data_well_known
       - ${DATA_DIR:-./data}/synapse:/data
     environment:
@@ -128,7 +128,7 @@ services:
     << : *IMAGE_PURGER_VERSION
     restart: always
     volumes:
-      - ./purge:/app
+      - ${DATA_DIR:-./data}/purge:/app
       - /var/run/docker.sock:/var/run/docker.sock
     working_dir: /app
     depends_on:
@@ -155,7 +155,7 @@ services:
       - 80:80
       - 443:443
     volumes:
-      - ./config/traefik:/etc/traefik
+      - ${DATA_DIR:-./data}/config/traefik:/etc/traefik
       - ${DATA_DIR:-./data}/traefik:/data
       - /var/run/docker.sock:/var/run/docker.sock
     command: --acme.email=${LETSENCRYPT_EMAIL}
