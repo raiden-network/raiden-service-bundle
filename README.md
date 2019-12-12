@@ -1,9 +1,9 @@
-# Raiden Transport
+# Raiden Service Bundle
 
 ## What is this repository
 
 This repository contains the documentation and configuration necessary to run a
-Raiden Transport Matrix server.
+Raiden Service Bundle.
 
 **Current release:** [2019.11.1](https://github.com/raiden-network/raiden-service-bundle/tree/2019.11.1)
 
@@ -20,15 +20,17 @@ Raiden Transport Matrix server.
 
 ## Overview
 
-The Raiden Network uses a federation of [Matrix](https://matrix.org) servers as its transport
-layer. To ensure reliability, availability and neutrality it is desirable that those servers are
-being operated by multiple independent entities.
+The Raiden Network uses a federation of [Matrix](https://matrix.org) servers as
+its transport layer and a set of services for improved usability. This set of
+services is called the Raiden Service Bundle. To ensure reliability,
+availability and neutrality it is desirable that those services are being
+operated by multiple independent entities.
 
-Therefore we provide this repository which allows easy setup of such a transport server.
-It uses docker and docker-compose for easy installation and upgrades.
+Therefore we provide this repository which allows easy setup of such a service
+bundle. It uses docker and docker-compose for easy installation and upgrades.
 
-Currently only this single-server configuration is supported; in the future we may also
-provide configurations with services split among multiple servers.
+Currently only this single-server configuration is supported; in the future we
+may also provide configurations with services split among multiple servers.
 
 ### Used software
 
@@ -71,13 +73,15 @@ provide configurations with services split among multiple servers.
 ```
 
 
-We use Traefik as a reverse proxy and also utilize its capability of automatically provisioning
-Let's Encrypt TLS certificates.
+We use Traefik as a reverse proxy and also utilize its capability of
+automatically provisioning Let's Encrypt TLS certificates.
 
-The Synapse server is being run in the so-called split worker configuration which increases throughput.
+The Synapse server is being run in the so-called split worker configuration
+which increases throughput.
 
-The database stores the message data. Since the transport layer is considered ephemeral in Raiden it
-is not necessary to arrange for backups of the database data.
+The database stores the message data. Since the transport layer is considered
+ephemeral in Raiden it is not necessary to arrange for backups of the database
+data.
 
 ### Network
 
@@ -158,8 +162,8 @@ Note: some services might need a few minutes to become healthy.
 
 ## Upgrades
 
-To upgrade to a new release please check the [changelog](#changelog) for any necessary
-configuration changes and then run the following commands:
+To upgrade to a new release please check the [changelog](#changelog) for any
+necessary configuration changes and then run the following commands:
 
 ```shell
 git fetch origin --tags
@@ -181,10 +185,11 @@ This will be addressed in future updates.
 
 ### Known servers
 
-The known servers the Raiden clients try to connect to are currently tracked in the *.yml files in this repository.
-These lists are used by Raiden clients when the ``--matrix-server=auto`` (default) option is used,
-for automatically selecting a transport server, based on response times.
-We intend to change this in the future to use a decentralized scheme (for example an on-chain registry).
+The known servers the Raiden clients try to connect to are currently tracked in
+the *.yml files in this repository. These lists are used by Raiden clients when
+the ``--matrix-server=auto`` (default) option is used, for automatically
+selecting a transport server, based on response times. We intend to change this
+in the future to use a decentralized scheme (for example an on-chain registry).
 
 
 ## Contact / Troubleshooting
