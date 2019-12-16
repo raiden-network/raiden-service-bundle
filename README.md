@@ -130,7 +130,6 @@ Note: The default Postgres configuration assumes 16GiB of system RAM
    - somecompany-raidentransport.tld
 
 1. Configure `A` (and optionally `AAAA`) DNS records for the domain pointing to the servers IP address(es)
-1. Configure `A` (and optionally `AAAA`) DNS records for `pfs.<domain>` pointing to the servers IP address(es)
 1. Configure a `CNAME` DNS record for `*.<domain>` pointing back to `<domain>`
 
 ### Installing
