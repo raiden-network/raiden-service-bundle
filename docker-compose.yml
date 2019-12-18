@@ -15,7 +15,7 @@ x-versions:
   traefik: &IMAGE_TRAEFIK_VERSION
     image: traefik:1.7
   purger: &IMAGE_PURGER_VERSION
-    image: python:3.7
+    image: raidennetwork/raiden-services-bundle:nightly-purger
 # /versions
 
 x-defaults: &services-defaults
@@ -150,7 +150,7 @@ services:
     << : *IMAGE_PURGER_VERSION
     restart: always
     volumes:
-      - ./purge:/app
+      - ./config/synapse:/config
       - /var/run/docker.sock:/var/run/docker.sock
     working_dir: /app
     depends_on:
@@ -160,16 +160,17 @@ services:
         condition: service_healthy
     environment:
       - PURGE_SLEEP_UNTIL=05:00:00
-      - MATRIX_DOCKER_RESTART_LABEL=purge_restart_container
-      - MATRIX_DB_URI=postgres://postgres@db:5432/synapse
-      - MATRIX_SERVER=http://synapse:8008
-      - SERVER_NAME
-      - MATRIX_ADMIN_PRIVATE_KEY_PASSWORD=
-      - MATRIX_ADMIN_PRIVATE_KEY_GENERATE=1
-      - MATRIX_KEEP_NEWER=15
-      - MATRIX_KEEP_MIN_MSGS=3000
-    command: bash purge.sh
-
+    command:
+      - "postgres://postgres@db:5432/synapse"
+      - "http://synapse:8008"
+      - "--docker-restart-label"
+      - "purge_restart_container"
+      - "--keep-newer"
+      - "15"
+      - "--keep-min-msgs"
+      - "3000"
+      - "--credentials-file"
+      - "/config/admin_user_cred.json"
 # common traefik
   traefik:
     << : *IMAGE_TRAEFIK_VERSION
