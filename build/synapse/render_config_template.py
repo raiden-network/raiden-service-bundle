@@ -9,6 +9,7 @@ from urllib.request import urlopen
 PATH_CONFIG = Path("/config/synapse.yaml")
 PATH_CONFIG_TEMPLATE = Path("/config/synapse.template.yaml")
 PATH_MACAROON_KEY = Path("/data/keys/macaroon.key")
+PATH_ADMIN_USER_CREDENTIALS = Path("/config/admin_user_cred.json")
 PATH_KNOWN_FEDERATION_SERVERS = Path("/data/known_federation_servers.yaml")
 PATH_WELL_KNOWN_FILE = Path("/data_well_known/server")
 
@@ -61,6 +62,20 @@ def render_well_known_file(server_name: str) -> None:
     PATH_WELL_KNOWN_FILE.write_text(json.dumps(content, indent=2))
 
 
+def generate_admin_user_credentials():
+    """
+    Generate a random username / password combination that will be used by various tools in the
+    package to authenticate as an admin user via the ``AdminUserAuthProvider``.
+    """
+    if PATH_ADMIN_USER_CREDENTIALS.exists():
+        return
+    username = "".join(random.choice(string.digits + string.ascii_letters) for _ in range(20))
+    password = "".join(random.choice(string.digits + string.ascii_letters) for _ in range(20))
+    PATH_ADMIN_USER_CREDENTIALS.write_text(
+        json.dumps({"username": username, "password": password})
+    )
+
+
 def main() -> None:
     url_known_federation_servers = os.environ.get(
         "URL_KNOWN_FEDERATION_SERVERS", URL_KNOWN_FEDERATION_SERVERS_DEFAULT
@@ -68,10 +83,10 @@ def main() -> None:
     server_name = os.environ["SERVER_NAME"]
 
     render_synapse_config(
-        server_name=server_name,
-        url_known_federation_servers=url_known_federation_servers,
+        server_name=server_name, url_known_federation_servers=url_known_federation_servers
     )
     render_well_known_file(server_name=server_name)
+    generate_admin_user_credentials()
 
 
 if __name__ == "__main__":
