@@ -49,6 +49,40 @@ jobs:
             docker build --build-arg NGINX_VERSION -t ${IMAGE_NAME}:${DOCKER_TAG} build/well_known_server ; \
             echo "$DEVOPS_DOCKERHUB_TOKEN" | docker login -u brainbotdevops --password-stdin ; \
             docker push ${IMAGE_NAME}:${DOCKER_TAG}
+  build_room_ensurer:
+    environment:
+      BASH_ENV: BUILD_VERSIONS
+    docker:
+      - image: circleci/buildpack-deps:stretch
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run:
+          name: Build Docker image
+          command: |
+            IMAGE_NAME=raidennetwork/raiden-services-bundle \
+            DOCKER_TAG=${CIRCLE_TAG:-nightly}-room_ensurer; \
+            docker build --build-arg RAIDEN_VERSION -t ${IMAGE_NAME}:${DOCKER_TAG} build/room_ensurer ; \
+            echo "$DEVOPS_DOCKERHUB_TOKEN" | docker login -u brainbotdevops --password-stdin ; \
+            docker push ${IMAGE_NAME}:${DOCKER_TAG}
+  build_purger:
+    environment:
+      BASH_ENV: BUILD_VERSIONS
+    docker:
+      - image: circleci/buildpack-deps:stretch
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run:
+          name: Build Docker image
+          command: |
+            IMAGE_NAME=raidennetwork/raiden-services-bundle \
+            DOCKER_TAG=${CIRCLE_TAG:-nightly}-purger; \
+            docker build --build-arg RAIDEN_VERSION -t ${IMAGE_NAME}:${DOCKER_TAG} build/purger ; \
+            echo "$DEVOPS_DOCKERHUB_TOKEN" | docker login -u brainbotdevops --password-stdin ; \
+            docker push ${IMAGE_NAME}:${DOCKER_TAG}
 
 workflows:
   version: 2
@@ -57,6 +91,8 @@ workflows:
       - build_synapse
       - build_db
       - build_well_known
+      - build_room_ensurer
+      - build_purger
   tagged_images:
     jobs:
       - build_synapse:
@@ -68,6 +104,14 @@ workflows:
             tags:
               only: /.*/
       - build_well_known:
+          filters:
+            tags:
+              only: /.*/
+      - build_room_ensurer:
+          filters:
+            tags:
+              only: /.*/
+      - build_purger:
           filters:
             tags:
               only: /.*/

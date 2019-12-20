@@ -5,12 +5,6 @@ set -e
 echo "======================="
 echo -n "Started at: " ; date
 
-if [[ ! -d ./venv ]]; then
-    python3 -m venv venv
-fi
-. ./venv/bin/activate
-pip3 install -r requirements.txt
-
 # if PURGE_SLEEP_UNTIL env is defined and is a time in the format "%H:%m[:%s]",
 # sleep until then before continuing
 if [[ -n $PURGE_SLEEP_UNTIL ]]; then
@@ -19,4 +13,4 @@ if [[ -n $PURGE_SLEEP_UNTIL ]]; then
     sleep $SLEEP_FOR
 fi
 
-exec python3 purge.py "$@"
+exec /opt/venv/bin/python3 /purger.py "$@"

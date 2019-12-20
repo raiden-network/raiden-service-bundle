@@ -12,3 +12,7 @@ purge/admin_access.json
 purge/admin_key.json
 purge/venv
 config/synapse/synapse.yaml
+config/synapse/admin_user_cred.json
+
+# Explicitly unignore build folder ("build" is a commonly globally ignored folder on some dev's systems)
+!build
