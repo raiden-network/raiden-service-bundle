@@ -29,7 +29,7 @@ services:
 # raiden-services containers
   pfs:
     << : *services-defaults
-    command: ["python3", "-m", "pathfinding_service.cli"]
+    command: ["python3", "-m", "pathfinding_service.cli", "--matrix-server", "https://${SERVER_NAME}"]
     restart: always
     ports:
       - 6001:6000
@@ -45,6 +45,9 @@ services:
       - "traefik.enable=true"
       - "traefik.frontend.rule=Host:pfs.${SERVER_NAME}"
       - "traefik.default.backend.healthcheck.path=/api/v1/info"
+    depends_on:
+      synapse:
+        condition: service_healthy
     healthcheck:
       disable: true
 
@@ -65,7 +68,7 @@ services:
 
   msrc:
     << : *services-defaults
-    command: ["python3", "-m", "request_collector.cli"]
+    command: ["python3", "-m", "request_collector.cli", "--matrix-server", "https://${SERVER_NAME}"]
     restart: always
     ports:
       - 6003:6000
@@ -76,6 +79,8 @@ services:
       - MSRC_PASSWORD=${PASSWORD}
       - MSRC_CHAIN_ID=${CHAIN_ID}
     depends_on:
+      synapse:
+        condition: service_healthy
       ms:
         condition: service_healthy
     healthcheck:
