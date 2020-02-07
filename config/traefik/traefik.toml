@@ -1,33 +1,48 @@
-debug = false
+[log]
+  level = "INFO"
 
-logLevel = "INFO"
-defaultEntryPoints = ["https","http"]
+[accessLog]
 
 [entryPoints]
-  [entryPoints.http]
+  [entryPoints.web]
     address = ":80"
-    [entryPoints.http.redirect]
-      entryPoint = "https"
-  [entryPoints.https]
+  [entryPoints.websecure]
     address = ":443"
-    [entryPoints.https.tls]
 
-[retry]
+[http.routers]
+  [http.routers.http_catchall]
+    entryPoints = ["web"]
+    middlewares = ["https_redirect"]
+    rule = "HostRegexp(`{any:.+}`)"
+    service = "noop"
 
-[docker]
+[http.services]
+  # noop service, the URL will be never called
+  [http.services.noop.loadBalancer]
+    [[http.services.noop.loadBalancer.servers]]
+      url = "http://0.0.0.0:0"
+
+[http.middlewares]
+  [http.middlewares.https_redirect.redirectScheme]
+    scheme = "https"
+    permanent = true
+
+[api]
+  dashboard = true
+
+
+[providers.docker]
   watch = true
-  exposedbydefault = false
+  exposedByDefault = false
 
-[acme]
+[certificatesResolvers.le.acme]
   storage = "/data/acme.json"
-  entryPoint = "https"
-  OnHostRule = true
 
-  [acme.httpChallenge]
-    entryPoint = "http"
+  [certificatesResolvers.le.acme.httpChallenge]
+    entryPoint = "web"
 
-[web]
-  address = ":8080"
-  readOnly = true
-  [web.metrics.prometheus]
-    buckets=[0.1,0.3,1.2,5.0]
+[metrics]
+  [metrics.prometheus]
+    addEntryPointsLabels = true
+    addServicesLabels = true
+    manualRouting = true

@@ -7,13 +7,13 @@ x-versions:
   db: &IMAGE_DB_VERSION
     image: raidennetwork/raiden-services-bundle:2019.11.1-db
   synapse: &IMAGE_SYNAPSE_VERSION
-    image: raidennetwork/raiden-services-bundle:2019.11.1-synapse
+    image: raidennetwork/raiden-services-bundle:nightly-synapse
   well-known-server: &IMAGE_WELL_KNOWN_VERSION
     image: raidennetwork/raiden-services-bundle:2019.11.1-well_known_server
   room_ensurer: &IMAGE_ROOM_ENSURER_VERSION
     image: raidennetwork/raiden-services-bundle:nightly-room_ensurer
   traefik: &IMAGE_TRAEFIK_VERSION
-    image: traefik:1.7
+    image: traefik:2.1
   purger: &IMAGE_PURGER_VERSION
     image: raidennetwork/raiden-services-bundle:nightly-purger
 # /versions
@@ -41,13 +41,17 @@ services:
       - PFS_KEYSTORE_FILE=/keystore/${KEYSTORE_FILE}
       - PFS_PASSWORD=${PASSWORD}
       - PFS_ETH_RPC=${ETH_RPC}
-    labels:
-      - "traefik.enable=true"
-      - "traefik.frontend.rule=Host:pfs.${SERVER_NAME}"
-      - "traefik.default.backend.healthcheck.path=/api/v1/info"
     depends_on:
       synapse:
         condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.pfs.rule=Host(`pfs.${SERVER_NAME}`)"
+      - "traefik.http.routers.traefik.entrypoints=websecure"
+      - "traefik.http.routers.pfs.tls=true"
+      - "traefik.http.routers.pfs.tls.certresolver=le"
+      - "traefik.http.routers.pfs.service=pfs"
+      - "traefik.http.services.pfs.loadbalancer.healthcheck.path=/api/v1/info"
     healthcheck:
       disable: true
 
@@ -102,13 +106,21 @@ services:
         condition: service_healthy
     labels:
       - "traefik.enable=true"
-      - "traefik.default.port=8008"
-      - "traefik.default.frontend.rule=Host:${SERVER_NAME}"
-      - "traefik.default.backend.healthcheck.path=/_matrix/client/versions"
-      - "traefik.metrics.port=9101"
-      - "traefik.metrics.frontend.rule=Host:metrics.${SERVER_NAME}"
-      - "traefik.metrics.frontend.whiteList.sourceRange=${CIDR_ALLOW_METRICS}"
-      - "traefik.metrics.frontend.whiteList.useXForwardedFor=false"
+      - "traefik.http.routers.synapse.rule=Host(`${SERVER_NAME}`)"
+      - "traefik.http.routers.synapse.entrypoints=websecure"
+      - "traefik.http.routers.synapse.tls=true"
+      - "traefik.http.routers.synapse.tls.certresolver=le"
+      - "traefik.http.routers.synapse.service=synapse"
+      - "traefik.http.services.synapse.loadbalancer.server.port=8008"
+      - "traefik.http.services.synapse.loadbalancer.healthcheck.path=/_matrix/client/versions"
+      - "traefik.http.routers.metrics.rule=Host(`metrics.${SERVER_NAME}`)"
+      - "traefik.http.routers.metrics.entrypoints=websecure"
+      - "traefik.http.routers.metrics.tls=true"
+      - "traefik.http.routers.metrics.tls.certresolver=le"
+      - "traefik.http.routers.metrics.middlewares=metrics-access-control@docker"
+      - "traefik.http.routers.metrics.service=metrics"
+      - "traefik.http.services.metrics.loadbalancer.server.port=9101"
+      - "traefik.http.middlewares.metrics-access-control.ipwhitelist.sourcerange=${CIDR_ALLOW_METRICS}"
       - "purge_restart_container=true"
 
   db:
@@ -130,7 +142,10 @@ services:
         condition: service_healthy
     labels:
       - "traefik.enable=true"
-      - "traefik.frontend.rule=Host:${SERVER_NAME}; PathPrefix: /.well-known/matrix"
+      - "traefik.http.routers.well-known.rule=Host(`${SERVER_NAME}`) && PathPrefix(`/.well-known/matrix`)"
+      - "traefik.http.routers.well-known.entrypoints=websecure"
+      - "traefik.http.routers.well-known.tls=true"
+      - "traefik.http.routers.well-known.tls.certresolver=le"
 
   room_ensurer:
     << : *IMAGE_ROOM_ENSURER_VERSION
@@ -187,22 +202,21 @@ services:
       - ./config/traefik:/etc/traefik
       - ${DATA_DIR:-./data}/traefik:/data
       - /var/run/docker.sock:/var/run/docker.sock
-    command: --acme.email=${LETSENCRYPT_EMAIL}
-    depends_on:
-      synapse:
-        condition: service_healthy
-      well_known_server:
-        condition: service_healthy
-      pfs:
-        condition: service_started
-      ms:
-        condition: service_healthy
-      msrc:
-        condition: service_started
+    command: --certificatesResolvers.le.acme.email=${LETSENCRYPT_EMAIL}
     healthcheck:
       disable: true
     labels:
       - "traefik.enable=true"
-      - "traefik.port=8080"
-      - "traefik.frontend.rule=Host:proxy.${SERVER_NAME}"
-      - "traefik.frontend.whiteList.sourceRange=${CIDR_ALLOW_PROXY}"
+      - "traefik.http.routers.traefik.rule=Host(`proxy.${SERVER_NAME}`)"
+      - "traefik.http.routers.traefik.tls=true"
+      - "traefik.http.routers.traefik.tls.certresolver=le"
+      - "traefik.http.routers.traefik.service=api@internal"
+      - "traefik.http.routers.traefik.entrypoints=websecure"
+      - "traefik.http.routers.traefik.middlewares=traefik-access-control@docker"
+      - "traefik.http.routers.traefik-metrics.rule=Host(`proxy.${SERVER_NAME}`) && PathPrefix(`/metrics`)"
+      - "traefik.http.routers.traefik-metrics.tls=true"
+      - "traefik.http.routers.traefik-metrics.tls.certresolver=le"
+      - "traefik.http.routers.traefik-metrics.service=prometheus@internal"
+      - "traefik.http.routers.traefik-metrics.entrypoints=websecure"
+      - "traefik.http.routers.traefik-metrics.middlewares=traefik-access-control@docker"
+      - "traefik.http.middlewares.traefik-access-control.ipwhitelist.sourcerange=${CIDR_ALLOW_METRICS}"
