@@ -1,88 +1,78 @@
 version: 2.1
 
+commands:
+  build-container:
+    parameters:
+      image-name:
+        description: "Name of the image being built"
+        default: "raidennetwork/raiden-services-bundle"
+        type: string
+      build-target:
+        description: "Which component are we building"
+        type: enum
+        enum: ["synapse", "db", "well_known_server", "room_ensurer", "purger"]
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run:
+          name: Set version tag or skip build
+          command: |
+            source .circleci/set_version_tag_or_skip.sh
+            echo "export VERSION_TAG=${VERSION_TAG}" >> BUILD_VERSIONS
+      - run:
+          name: Build Docker image
+          command: |
+            export IMAGE_NAME=<< parameters.image-name >>
+            export DOCKER_TAG=${CIRCLE_TAG:-${VERSION_TAG}}-<< parameters.build-target >>
+            docker build \
+              --build-arg SYNAPSE_VERSION \
+              --build-arg POSTGRES_VERSION \
+              --build-arg NGINX_VERSION \
+              --build-arg RAIDEN_VERSION \
+              -t ${IMAGE_NAME}:${DOCKER_TAG} \
+              build/<< parameters.build-target >>
+            echo "$DEVOPS_DOCKERHUB_TOKEN" | docker login -u brainbotdevops --password-stdin
+            docker push ${IMAGE_NAME}:${DOCKER_TAG}
+
+executors:
+  default:
+    environment:
+      BASH_ENV: BUILD_VERSIONS
+    docker:
+      - image: circleci/buildpack-deps:stretch
+
+
 jobs:
   build_synapse:
-    environment:
-      BASH_ENV: BUILD_VERSIONS
-    docker:
-      - image: circleci/buildpack-deps:stretch
+    executor: default
     steps:
-      - checkout
-      - setup_remote_docker
-      - run:
-          name: Build Docker image
-          command: |
-            IMAGE_NAME=raidennetwork/raiden-services-bundle \
-            DOCKER_TAG=${CIRCLE_TAG:-nightly}-synapse; \
-            docker build --build-arg SYNAPSE_VERSION -t ${IMAGE_NAME}:${DOCKER_TAG} build/synapse ; \
-            echo "$DEVOPS_DOCKERHUB_TOKEN" | docker login -u brainbotdevops --password-stdin ; \
-            docker push ${IMAGE_NAME}:${DOCKER_TAG}
+      - build-container:
+          build-target: synapse
+
   build_db:
-    environment:
-      BASH_ENV: BUILD_VERSIONS
-    docker:
-      - image: circleci/buildpack-deps:stretch
+    executor: default
     steps:
-      - checkout
-      - setup_remote_docker
-      - run:
-          name: Build Docker image
-          command: |
-            IMAGE_NAME=raidennetwork/raiden-services-bundle \
-            DOCKER_TAG=${CIRCLE_TAG:-nightly}-db; \
-            docker build --build-arg POSTGRES_VERSION -t ${IMAGE_NAME}:${DOCKER_TAG} build/db ; \
-            echo "$DEVOPS_DOCKERHUB_TOKEN" | docker login -u brainbotdevops --password-stdin ; \
-            docker push ${IMAGE_NAME}:${DOCKER_TAG}
+      - build-container:
+          build-target: db
+
   build_well_known:
-    environment:
-      BASH_ENV: BUILD_VERSIONS
-    docker:
-      - image: circleci/buildpack-deps:stretch
+    executor: default
     steps:
-      - checkout
-      - setup_remote_docker
-      - run:
-          name: Build Docker image
-          command: |
-            IMAGE_NAME=raidennetwork/raiden-services-bundle \
-            DOCKER_TAG=${CIRCLE_TAG:-nightly}-well_known_server; \
-            docker build --build-arg NGINX_VERSION -t ${IMAGE_NAME}:${DOCKER_TAG} build/well_known_server ; \
-            echo "$DEVOPS_DOCKERHUB_TOKEN" | docker login -u brainbotdevops --password-stdin ; \
-            docker push ${IMAGE_NAME}:${DOCKER_TAG}
+      - build-container:
+          build-target: well_known_server
+
   build_room_ensurer:
-    environment:
-      BASH_ENV: BUILD_VERSIONS
-    docker:
-      - image: circleci/buildpack-deps:stretch
+    executor: default
     steps:
-      - checkout
-      - setup_remote_docker:
-          docker_layer_caching: true
-      - run:
-          name: Build Docker image
-          command: |
-            IMAGE_NAME=raidennetwork/raiden-services-bundle \
-            DOCKER_TAG=${CIRCLE_TAG:-nightly}-room_ensurer; \
-            docker build --build-arg RAIDEN_VERSION -t ${IMAGE_NAME}:${DOCKER_TAG} build/room_ensurer ; \
-            echo "$DEVOPS_DOCKERHUB_TOKEN" | docker login -u brainbotdevops --password-stdin ; \
-            docker push ${IMAGE_NAME}:${DOCKER_TAG}
+      - build-container:
+          build-target: room_ensurer
+
   build_purger:
-    environment:
-      BASH_ENV: BUILD_VERSIONS
-    docker:
-      - image: circleci/buildpack-deps:stretch
+    executor: default
     steps:
-      - checkout
-      - setup_remote_docker:
-          docker_layer_caching: true
-      - run:
-          name: Build Docker image
-          command: |
-            IMAGE_NAME=raidennetwork/raiden-services-bundle \
-            DOCKER_TAG=${CIRCLE_TAG:-nightly}-purger; \
-            docker build --build-arg RAIDEN_VERSION -t ${IMAGE_NAME}:${DOCKER_TAG} build/purger ; \
-            echo "$DEVOPS_DOCKERHUB_TOKEN" | docker login -u brainbotdevops --password-stdin ; \
-            docker push ${IMAGE_NAME}:${DOCKER_TAG}
+      - build-container:
+          build-target: purger
 
 workflows:
   version: 2
