@@ -15,6 +15,7 @@ COPY synapse-entrypoint.sh /bin/
 COPY render_config_template.py /bin/
 
 ENTRYPOINT ["/bin/synapse-entrypoint.sh"]
+CMD ["/synapse-venv/bin/python", "-m", "synapse.app.homeserver", "--config-path", "/config/synapse.yaml"]
 
 # HTTP
 EXPOSE 8008

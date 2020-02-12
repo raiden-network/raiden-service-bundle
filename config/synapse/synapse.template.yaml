@@ -43,6 +43,14 @@ event_cache_size: "20K"
 log_config: "/config/synapse.log.config"
 
 
+## Split worker specific settings
+
+# Handled by the federation_sender worker
+send_federation: False
+# Handled by the user_directory worker
+update_user_directory: false
+
+
 ## Ratelimiting
 
 rc_message:
@@ -60,7 +68,7 @@ rc_login:
     burst_count: 10
   failed_attempts:
     per_second: 1
-    burst_count: 10
+    burst_count: 2
 
 rc_federation:
   # The federation window size in milliseconds
