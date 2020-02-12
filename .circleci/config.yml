@@ -88,20 +88,20 @@ workflows:
       - build_synapse:
           filters:
             tags:
-              only: /.*/
+              only: /.+/
       - build_db:
           filters:
             tags:
-              only: /.*/
+              only: /.+/
       - build_well_known:
           filters:
             tags:
-              only: /.*/
+              only: /.+/
       - build_room_ensurer:
           filters:
             tags:
-              only: /.*/
+              only: /.+/
       - build_purger:
           filters:
             tags:
-              only: /.*/
+              only: /.+/
