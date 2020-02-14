@@ -2,24 +2,32 @@ import datetime
 import json
 import sys
 import time
+from collections import defaultdict
 from json import JSONDecodeError
 from operator import itemgetter
+from pathlib import Path
 from typing import Any, Dict, TextIO
 from urllib.parse import quote, urljoin
 
 import click
+import docker
+import psycopg2
 import requests
 import yaml
 from matrix_client.errors import MatrixError
 
-import docker
-import psycopg2
+from build.utils import get_broadcast_room_aliases
+from raiden.constants import Networks
 from raiden.network.transport.matrix.client import GMatrixHttpApi
+
+USER_PURGING_INTERVAL = 7 * 24 * 60 * 60
 
 URL_KNOWN_FEDERATION_SERVERS_DEFAULT = (
     "https://raw.githubusercontent.com/raiden-network/raiden-transport/master/known_servers.yaml"
 )
+
 SYNAPSE_CONFIG_PATH = "/config/synapse.yaml"
+INACTIVE_USERS_LIST = "/config/inactive_users.json"
 
 
 @click.command()
@@ -181,6 +189,13 @@ def purge(
                 for i, row in enumerate(cur):
                     click.secho(f"{i}: {row}")
 
+        inactive_user_path = Path(INACTIVE_USERS_LIST)
+
+        if inactive_user_path.exists():
+            user_presence = json.loads(inactive_user_path.read_text())
+            user_presence_after_purger = purge_inactive_users(api, user_presence)
+            inactive_user_path.write_text(json.dumps(user_presence_after_purger))
+
     finally:
         if docker_restart_label:
             client = docker.from_env()
@@ -227,6 +242,49 @@ def purge(
                     )
                 # restart container
                 container.restart(timeout=30)
+
+
+def purge_inactive_users(api, user_presence):
+
+    current_time = int(time.time())
+    threshold_time = current_time - USER_PURGING_INTERVAL
+    inactive_users = list()
+    broadcast_room_ids = list()
+
+    for network in Networks:
+        broadcast_room_aliases = get_broadcast_room_aliases(network)
+        network_key = str(network.value)
+        for room_alias in broadcast_room_aliases:
+            try:
+                room_id = api.get_room_id(room_alias)
+                broadcast_room_ids.append(room_id)
+            except MatrixError:
+                pass
+
+        if network_key not in user_presence["network_to_users"]:
+            continue
+        for user_id, last_active_old in user_presence["network_to_users"][network_key].items():
+            if last_active_old < threshold_time:
+                response = api.get_presence(user_id)
+                presence = response["presence"]
+                last_active_ago = response["last_active_ago"] // 1000
+                last_active_update = current_time - last_active_ago
+                if last_active_update < threshold_time and presence == "offline":
+                    inactive_users.append(user_id)
+                elif last_active_update > last_active_old:
+                    user_presence["network_to_users"][network_key][user_id] = last_active_update
+
+                time.sleep(0.1)
+
+        for user_id in inactive_users:
+            for room_id in broadcast_room_ids:
+                api.kick_user(room_id, user_id)
+
+            del user_presence["network_to_users"][network_key][user_id]
+
+            time.sleep(0.1)
+
+    return user_presence
 
 
 if __name__ == "__main__":
