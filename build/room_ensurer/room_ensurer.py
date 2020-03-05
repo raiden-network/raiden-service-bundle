@@ -29,16 +29,16 @@ patch_all()  # isort:skip
 import json
 import os
 import sys
-import time
 from dataclasses import dataclass
+from enum import IntEnum
 from itertools import chain
 from json import JSONDecodeError
-from pathlib import Path
 from typing import Any, Dict, Optional, Set, TextIO, Tuple
 from urllib.parse import urlparse
 
 import click
 import gevent
+from eth_utils import encode_hex, to_normalized_address
 from matrix_client.errors import MatrixError
 from raiden_contracts.utils.type_aliases import ChainID
 from structlog import get_logger
@@ -51,10 +51,16 @@ from raiden.log_config import configure_logging
 from raiden.network.transport.matrix import make_room_alias
 from raiden.network.transport.matrix.client import GMatrixHttpApi
 from raiden.settings import DEFAULT_MATRIX_KNOWN_SERVERS
+from raiden.tests.utils.factories import make_signer
 from raiden.utils.cli import get_matrix_servers
 
 ENV_KEY_KNOWN_SERVERS = "URL_KNOWN_FEDERATION_SERVERS"
-USER_ACTIVITY_UPDATE_INTERVAL = 60 * 60 * 24 * 7  # One Week
+
+
+class MatrixPowerLevels(IntEnum):
+    USER = 0
+    MODERATOR = 50
+    ADMINISTRATOR = 100
 
 
 log = get_logger(__name__)
@@ -76,7 +82,6 @@ class RoomEnsurer:
         self,
         username: str,
         password: str,
-        user_activity_filepath: Path,
         own_server_name: str,
         known_servers_url: Optional[str] = None,
     ):
@@ -97,17 +102,6 @@ class RoomEnsurer:
         self._is_first_server = own_server_name == self._first_server_name
         self._apis: Dict[str, GMatrixHttpApi] = self._connect_all()
         self._own_api = self._apis[own_server_name]
-
-        self._user_activity_filepath = user_activity_filepath
-        self.last_user_presence_update: int = USER_ACTIVITY_UPDATE_INTERVAL
-        self.user_activity: Dict[str, Any] = {}
-
-        if user_activity_filepath.exists():
-            user_activity = json.loads(self._user_activity_filepath.read_text())
-            self.last_user_presence_update = user_activity["last_update"]
-            self.user_activity = user_activity["network_to_users"]
-        else:
-            self._user_activity_filepath.open("a").close()
 
         log.debug(
             "Room ensurer initialized",
@@ -247,10 +241,10 @@ class RoomEnsurer:
         for server_name in self._known_servers:
             username = f"admin-{server_name}".replace(":", "-")
             user_id = f"@{username}:{server_name}"
-            server_admin_power_levels["users"][user_id] = 50
+            server_admin_power_levels["users"][user_id] = MatrixPowerLevels.MODERATOR
 
         own_user_id = f"@{self._username}:{self._own_server_name}"
-        server_admin_power_levels["users"][own_user_id] = 100
+        server_admin_power_levels["users"][own_user_id] = MatrixPowerLevels.ADMINISTRATOR
         return server_admin_power_levels
 
     def _create_room(self, server_name: str, room_alias_prefix: str) -> RoomInfo:
@@ -276,49 +270,18 @@ class RoomEnsurer:
     def _connect(self, server_name: str, server_url: str) -> Tuple[str, GMatrixHttpApi]:
         log.debug("Connecting", server=server_name)
         api = GMatrixHttpApi(server_url)
-        response = api.login("m.login.password", user=self._username, password=self._password)
+        username = self._username
+        password = self._password
+
+        if server_name != self._own_server_name:
+            signer = make_signer()
+            username = str(to_normalized_address(signer.address))
+            password = encode_hex(signer.sign(server_name.encode()))
+
+        response = api.login("m.login.password", user=username, password=password)
         api.token = response["access_token"]
         log.debug("Connected", server=server_name)
         return server_name, api
-
-    def update_user_presence(self) -> None:
-        current_time = int(time.time())
-        user_activity_content = dict()
-        user_activity_content["last_update"] = current_time
-        self.last_user_presence_update = current_time
-
-        for network in Networks:
-            user_activity_content[network] = self._update_user_presence_for_network(
-                network, current_time
-            )
-
-        self._user_activity_filepath.write_text(json.dumps(user_activity_content))
-
-    def _update_user_presence_for_network(
-        self, network: Networks, current_time: int
-    ) -> Dict[str, Any]:
-
-        room_alias = make_room_alias(ChainID(network.value), DISCOVERY_DEFAULT_ROOM)
-        api = self._apis[self._own_server_name]
-        room_id = api.get_room_id(room_alias)
-        response = api.get_room_members(room_id)
-
-        users = [
-            event["state_key"]
-            for event in response["chunk"]
-            if event["content"]["membership"] == "join"
-            and event["state_key"].split(":")[1] == self._own_server_name
-        ]
-
-        network_user_activity = {}
-
-        for user_id in users:
-            response = api.get_presence(user_id)
-            last_active_ago = response["last_active_ago"] // 1000
-            network_user_activity[user_id] = current_time - last_active_ago
-            gevent.sleep(0.1)
-
-        return network_user_activity
 
 
 @click.command()
@@ -331,14 +294,7 @@ class RoomEnsurer:
 )
 @click.option("-l", "--log-level", default="INFO")
 @click.option("-c", "--credentials-file", required=True, type=click.File("rt"))
-@click.option("-u", "--user_activity_filepath", type=click.Path())
-def main(
-    own_server: str,
-    interval: int,
-    credentials_file: TextIO,
-    user_activity_filepath: Path,
-    log_level: str,
-) -> None:
+def main(own_server: str, interval: int, credentials_file: TextIO, log_level: str) -> None:
     configure_logging(
         {"": log_level, "raiden": log_level, "__main__": log_level}, disable_debug_logfile=True
     )
@@ -355,21 +311,14 @@ def main(
 
     while True:
         try:
-            room_ensurer = RoomEnsurer(
-                username, password, user_activity_filepath, own_server, known_servers_url
-            )
+            room_ensurer = RoomEnsurer(username, password, own_server, known_servers_url)
         except MatrixError:
             log.exception("Failure while communicating with matrix servers. Retrying in 60s")
             gevent.sleep(60)
             continue
+
         try:
             room_ensurer.ensure_rooms()
-            current_time = time.time()
-            if (
-                current_time - room_ensurer.last_user_presence_update
-                > USER_ACTIVITY_UPDATE_INTERVAL
-            ):
-                room_ensurer.update_user_presence()
 
         except EnsurerError as ex:
             log.exception(f"{ex} Retrying in 60s.")

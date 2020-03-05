@@ -64,7 +64,7 @@ def render_well_known_file(server_name: str) -> None:
 
 def generate_admin_user_credentials():
     """
-    Generate the username "admin-{server-name} and a random password combination
+    Generate the username "admin-{server-name}" and a random password combination
     that will be used by various tools in the
     package to authenticate as an admin user via the ``AdminUserAuthProvider``.
     """

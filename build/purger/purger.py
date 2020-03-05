@@ -2,32 +2,48 @@ import datetime
 import json
 import sys
 import time
-from collections import defaultdict
+from dataclasses import dataclass
 from json import JSONDecodeError
 from operator import itemgetter
 from pathlib import Path
-from typing import Any, Dict, TextIO
-from urllib.parse import quote, urljoin
+from typing import Any, Dict, List, TextIO
+from urllib.parse import quote, urljoin, urlparse
 
 import click
-import docker
 import psycopg2
 import requests
 import yaml
 from matrix_client.errors import MatrixError
+from raiden_contracts.utils.type_aliases import ChainID
 
-from build.utils import get_broadcast_room_aliases
-from raiden.constants import Networks
+import docker
+from raiden.constants import (
+    DISCOVERY_DEFAULT_ROOM,
+    MONITORING_BROADCASTING_ROOM,
+    PATH_FINDING_BROADCASTING_ROOM,
+    Networks,
+)
+from raiden.network.transport.matrix import make_room_alias
 from raiden.network.transport.matrix.client import GMatrixHttpApi
-
-USER_PURGING_INTERVAL = 7 * 24 * 60 * 60
 
 URL_KNOWN_FEDERATION_SERVERS_DEFAULT = (
     "https://raw.githubusercontent.com/raiden-network/raiden-transport/master/known_servers.yaml"
 )
 
 SYNAPSE_CONFIG_PATH = "/config/synapse.yaml"
-INACTIVE_USERS_LIST = "/config/inactive_users.json"
+USER_PURGING_THRESHOLD = 2 * 24 * 60 * 60  # 2 days
+USER_ACTIVITY_PATH = Path("/config/user_activity.json")
+
+
+@dataclass(frozen=True)
+class RoomInfo:
+    room_id: str
+    alias: str
+    server_name: str
+
+    @property
+    def local_room_alias(self):
+        return f"#{self.alias}:{self.server_name}"
 
 
 @click.command()
@@ -189,13 +205,30 @@ def purge(
                 for i, row in enumerate(cur):
                     click.secho(f"{i}: {row}")
 
-        inactive_user_path = Path(INACTIVE_USERS_LIST)
+        # check if user activity file already exists
+        if USER_ACTIVITY_PATH.exists():
+            global_user_activity = json.loads(USER_ACTIVITY_PATH.read_text())
+        else:
+            USER_ACTIVITY_PATH.touch()
+            global_user_activity = dict()
+            global_user_activity["last_update"] = int(time.time()) - USER_PURGING_THRESHOLD - 1
+            global_user_activity["network_to_users"] = dict()
 
-        if inactive_user_path.exists():
-            user_presence = json.loads(inactive_user_path.read_text())
-            user_presence_after_purger = purge_inactive_users(api, user_presence)
-            inactive_user_path.write_text(json.dumps(user_presence_after_purger))
+        # check if there are new networks to add
+        for network in Networks:
+            if str(network.value) in global_user_activity["network_to_users"]:
+                continue
+            global_user_activity["network_to_users"][str(network.value)] = dict()
 
+        # get broadcast room ids for all networks
+        network_to_broadcast_rooms = get_network_to_broadcast_rooms(api)
+
+        new_global_user_activity = run_user_purger(
+            api, global_user_activity, network_to_broadcast_rooms
+        )
+
+        # write the updated user activity to file
+        USER_ACTIVITY_PATH.write_text(json.dumps(new_global_user_activity))
     finally:
         if docker_restart_label:
             client = docker.from_env()
@@ -244,47 +277,199 @@ def purge(
                 container.restart(timeout=30)
 
 
-def purge_inactive_users(api, user_presence):
+def run_user_purger(
+    api: GMatrixHttpApi,
+    global_user_activity: Dict[str, Any],
+    network_to_broadcast_rooms: Dict[str, List[RoomInfo]],
+) -> Dict[str, Any]:
+    """
+    The user purger mechanism finds inactive users which have been offline
+    longer than the threshold time and will kick them out of the global rooms
+    to clean up the server's database and reduce load.
+    Each server is responsible for its own users
 
-    current_time = int(time.time())
-    threshold_time = current_time - USER_PURGING_INTERVAL
-    inactive_users = list()
-    broadcast_room_ids = list()
+    :param api: Api object to own server
+    :param global_user_activity: content of user activity file
+    :param network_to_broadcast_rooms: RoomInfo Objects of all broadcast rooms
+    :return: None
+    """
+
+    # perform update on user presence for due users
+    # receive a list for due users on each network
+    due_users = update_user_activity(api, global_user_activity, network_to_broadcast_rooms)
+    # purge due users form rooms
+    purge_inactive_users(api, global_user_activity, network_to_broadcast_rooms, due_users)
+
+    return global_user_activity
+
+
+def get_network_to_broadcast_rooms(api: GMatrixHttpApi) -> Dict[str, List[RoomInfo]]:
+
+    room_alias_fragments = [
+        DISCOVERY_DEFAULT_ROOM,
+        PATH_FINDING_BROADCASTING_ROOM,
+        MONITORING_BROADCASTING_ROOM,
+    ]
+
+    server = urlparse(api.base_url).netloc
+    network_to_broadcast: Dict[str, List[RoomInfo]] = dict()
 
     for network in Networks:
-        broadcast_room_aliases = get_broadcast_room_aliases(network)
-        network_key = str(network.value)
-        for room_alias in broadcast_room_aliases:
+        broadcast_room_infos: List[RoomInfo] = list()
+        network_to_broadcast[str(network.value)] = broadcast_room_infos
+        for room_alias_fragment in room_alias_fragments:
+            broadcast_room_alias = make_room_alias(ChainID(network.value), room_alias_fragment)
+            local_room_alias = f"#{broadcast_room_alias}:{server}"
+
             try:
-                room_id = api.get_room_id(room_alias)
-                broadcast_room_ids.append(room_id)
-            except MatrixError:
-                pass
+                room_id = api.get_room_id(local_room_alias)
+                broadcast_room_infos.append(RoomInfo(room_id, broadcast_room_alias, server))
+            except MatrixError as ex:
+                click.secho(f"Could not find room {broadcast_room_alias} with error {ex}")
 
-        if network_key not in user_presence["network_to_users"]:
-            continue
-        for user_id, last_active_old in user_presence["network_to_users"][network_key].items():
-            if last_active_old < threshold_time:
-                response = api.get_presence(user_id)
-                presence = response["presence"]
+    return network_to_broadcast
+
+
+def update_user_activity(
+    api: GMatrixHttpApi,
+    global_user_activity: Dict[str, Any],
+    broadcast_rooms: Dict[str, List[RoomInfo]],
+) -> Dict[str, List[str]]:
+    """
+    runs update on users' presences which are about to be kicked.
+    If they are still overdue they are going to be added to the list
+    of users to be kicked. Presence updates are included in the
+    global list which is going to be stored in the user_activity_file
+    :param api: api to its own server
+    :param global_user_activity: content of user_activity_file
+    :param broadcast_rooms: room information for broadcast rooms
+    :return: a list of due users to be kicked
+    """
+    current_time = int(time.time())
+    last_user_activity_update = global_user_activity["last_update"]
+    network_to_users = global_user_activity["network_to_users"]
+    network_to_due_users = dict()
+    fetch_new_members = False
+
+    # check if new members have to be fetched
+    # new members only have to be fetched every
+    # USER_PURGING_THRESHOLD since that is the earliest time
+    # new members are able to be kicked. This keeps the load on
+    # the server as low as possible
+    if last_user_activity_update < current_time - USER_PURGING_THRESHOLD:
+        fetch_new_members = True
+        global_user_activity["last_update"] = current_time
+
+    for network_key, user_activity in network_to_users.items():
+        if fetch_new_members:
+            _fetch_new_members_for_network(
+                api=api,
+                user_activity=network_to_users[network_key],
+                discovery_room=broadcast_rooms[network_key][0],
+                current_time=current_time,
+            )
+
+        network_to_due_users[network_key] = _update_user_activity_for_network(
+            api=api, user_activity=user_activity, current_time=current_time
+        )
+
+    return network_to_due_users
+
+
+def _fetch_new_members_for_network(
+    api: GMatrixHttpApi, user_activity: Dict[str, int], discovery_room: RoomInfo, current_time: int
+) -> None:
+    try:
+        response = api.get_room_members(discovery_room.room_id)
+        room_members = [
+            event["state_key"]
+            for event in response["chunk"]
+            if event["content"]["membership"] == "join"
+            and event["state_key"].split(":")[1] == urlparse(api.base_url).netloc
+            and not event["state_key"].find("admin")
+        ]
+
+        # Add new members with an overdue activity time
+        # to trigger presence update later
+        for user_id in room_members:
+            if user_id not in user_activity:
+                user_activity[user_id] = current_time - USER_PURGING_THRESHOLD - 1
+
+    except MatrixError as ex:
+        click.secho(f"Could not fetch members for {discovery_room.alias} with error {ex}")
+
+
+def _update_user_activity_for_network(
+    api: GMatrixHttpApi, user_activity: Dict[str, Any], current_time: int
+) -> List[str]:
+    deadline = current_time - USER_PURGING_THRESHOLD
+
+    possible_candidates = [
+        user_id for user_id, last_seen in user_activity.items() if last_seen < deadline
+    ]
+
+    due_users = list()
+
+    # presence updates are only run for possible due users.
+    # This helps to spread the load on the server as good as possible
+    # Since this script runs once a day, every day a couple of users are
+    # going to be updated rather than all at once
+    for user_id in possible_candidates:
+        try:
+            response = api.get_presence(user_id)
+            # in rare cases there is no last_active_ago sent
+            if "last_active_ago" in response:
                 last_active_ago = response["last_active_ago"] // 1000
-                last_active_update = current_time - last_active_ago
-                if last_active_update < threshold_time and presence == "offline":
-                    inactive_users.append(user_id)
-                elif last_active_update > last_active_old:
-                    user_presence["network_to_users"][network_key][user_id] = last_active_update
+            else:
+                last_active_ago = USER_PURGING_THRESHOLD + 1
+            presence = response["presence"]
+            last_seen = current_time - last_active_ago
+            user_activity[user_id] = last_seen
+            if user_activity[user_id] < deadline and presence == "offline":
+                due_users.append(user_id)
 
-                time.sleep(0.1)
-
-        for user_id in inactive_users:
-            for room_id in broadcast_room_ids:
-                api.kick_user(room_id, user_id)
-
-            del user_presence["network_to_users"][network_key][user_id]
-
+        except MatrixError as ex:
+            click.secho(f"Could not fetch user presence of {user_id}: {ex}")
+        finally:
             time.sleep(0.1)
+    return due_users
 
-    return user_presence
+
+def purge_inactive_users(
+    api: GMatrixHttpApi,
+    global_user_activity: Dict[str, Any],
+    network_to_broadcast_rooms: Dict[str, List[RoomInfo]],
+    network_to_due_users: Dict[str, List[str]],
+) -> None:
+    for network_key, due_users in network_to_due_users.items():
+        _purge_inactive_users_for_network(
+            api=api,
+            user_activity=global_user_activity["network_to_users"][network_key],
+            due_users=due_users,
+            broadcast_rooms=network_to_broadcast_rooms[network_key],
+        )
+
+
+def _purge_inactive_users_for_network(
+    api: GMatrixHttpApi,
+    user_activity: Dict[str, int],
+    due_users: List[str],
+    broadcast_rooms: List[RoomInfo],
+) -> None:
+    for user_id in due_users:
+        for room in broadcast_rooms:
+            try:
+                # kick the user and remove him from the user_activity_file
+                last_ago = (int(time.time()) - user_activity[user_id]) / (60 * 60 * 24)
+                api.kick_user(room.room_id, user_id)
+                user_activity.pop(user_id, None)
+                click.secho(
+                    f"{user_id} kicked from room {room.alias}. Offline for {last_ago} days."
+                )
+            except MatrixError as ex:
+                click.secho(f"Could not kick user from room {room.alias} with error {ex}")
+            finally:
+                time.sleep(0.1)
 
 
 if __name__ == "__main__":
