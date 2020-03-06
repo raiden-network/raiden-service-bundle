@@ -30,31 +30,38 @@ import json
 import os
 import sys
 from dataclasses import dataclass
+from enum import IntEnum
 from itertools import chain
 from json import JSONDecodeError
-from typing import Dict, Optional, Set, TextIO, Tuple
+from typing import Any, Dict, Optional, Set, TextIO, Tuple
 from urllib.parse import urlparse
 
 import click
 import gevent
+from eth_utils import encode_hex, to_normalized_address
 from matrix_client.errors import MatrixError
 from raiden_contracts.utils.type_aliases import ChainID
 from structlog import get_logger
 
-from raiden.constants import (
-    DISCOVERY_DEFAULT_ROOM,
-    MONITORING_BROADCASTING_ROOM,
-    PATH_FINDING_BROADCASTING_ROOM,
-    Environment,
-    Networks,
-)
+from raiden.constants import (DISCOVERY_DEFAULT_ROOM,
+                              MONITORING_BROADCASTING_ROOM,
+                              PATH_FINDING_BROADCASTING_ROOM, Environment,
+                              Networks)
 from raiden.log_config import configure_logging
 from raiden.network.transport.matrix import make_room_alias
 from raiden.network.transport.matrix.client import GMatrixHttpApi
 from raiden.settings import DEFAULT_MATRIX_KNOWN_SERVERS
+from raiden.tests.utils.factories import make_signer
 from raiden.utils.cli import get_matrix_servers
 
 ENV_KEY_KNOWN_SERVERS = "URL_KNOWN_FEDERATION_SERVERS"
+
+
+class MatrixPowerLevels(IntEnum):
+    USER = 0
+    MODERATOR = 50
+    ADMINISTRATOR = 100
+
 
 log = get_logger(__name__)
 
@@ -95,6 +102,7 @@ class RoomEnsurer:
         self._is_first_server = own_server_name == self._first_server_name
         self._apis: Dict[str, GMatrixHttpApi] = self._connect_all()
         self._own_api = self._apis[own_server_name]
+
         log.debug(
             "Room ensurer initialized",
             own_server_name=own_server_name,
@@ -227,9 +235,26 @@ class RoomEnsurer:
         )
         return RoomInfo(room_id=room_id, aliases=existing_room_aliases, server_name=server_name)
 
+    def _create_server_user_power_levels(self) -> Dict[str, Any]:
+
+        server_admin_power_levels: Dict[str, Dict[str, int]] = {"users": {}}
+        for server_name in self._known_servers:
+            username = f"admin-{server_name}".replace(":", "-")
+            user_id = f"@{username}:{server_name}"
+            server_admin_power_levels["users"][user_id] = MatrixPowerLevels.MODERATOR
+
+        own_user_id = f"@{self._username}:{self._own_server_name}"
+        server_admin_power_levels["users"][own_user_id] = MatrixPowerLevels.ADMINISTRATOR
+        return server_admin_power_levels
+
     def _create_room(self, server_name: str, room_alias_prefix: str) -> RoomInfo:
         api = self._apis[server_name]
-        response = api.create_room(room_alias_prefix, is_public=True)
+        server_admin_power_levels = self._create_server_user_power_levels()
+        response = api.create_room(
+            room_alias_prefix,
+            is_public=True,
+            power_level_content_override=server_admin_power_levels,
+        )
         room_alias = f"#{room_alias_prefix}:{server_name}"
         return RoomInfo(response["room_id"], {room_alias}, server_name)
 
@@ -245,7 +270,15 @@ class RoomEnsurer:
     def _connect(self, server_name: str, server_url: str) -> Tuple[str, GMatrixHttpApi]:
         log.debug("Connecting", server=server_name)
         api = GMatrixHttpApi(server_url)
-        response = api.login("m.login.password", user=self._username, password=self._password)
+        username = self._username
+        password = self._password
+
+        if server_name != self._own_server_name:
+            signer = make_signer()
+            username = str(to_normalized_address(signer.address))
+            password = encode_hex(signer.sign(server_name.encode()))
+
+        response = api.login("m.login.password", user=username, password=password)
         api.token = response["access_token"]
         log.debug("Connected", server=server_name)
         return server_name, api
@@ -271,6 +304,7 @@ def main(own_server: str, interval: int, credentials_file: TextIO, log_level: st
         credentials = json.loads(credentials_file.read())
         username = credentials["username"]
         password = credentials["password"]
+
     except (JSONDecodeError, UnicodeDecodeError, OSError, KeyError):
         log.exception("Invalid credentials file")
         sys.exit(1)
@@ -282,8 +316,10 @@ def main(own_server: str, interval: int, credentials_file: TextIO, log_level: st
             log.exception("Failure while communicating with matrix servers. Retrying in 60s")
             gevent.sleep(60)
             continue
+
         try:
             room_ensurer.ensure_rooms()
+
         except EnsurerError as ex:
             log.exception(f"{ex} Retrying in 60s.")
             gevent.sleep(60)

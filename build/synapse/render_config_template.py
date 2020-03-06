@@ -64,12 +64,13 @@ def render_well_known_file(server_name: str) -> None:
 
 def generate_admin_user_credentials():
     """
-    Generate a random username / password combination that will be used by various tools in the
+    Generate the username "admin-{server-name}" and a random password combination
+    that will be used by various tools in the
     package to authenticate as an admin user via the ``AdminUserAuthProvider``.
     """
     if PATH_ADMIN_USER_CREDENTIALS.exists():
         return
-    username = "".join(random.choice(string.digits + string.ascii_lowercase) for _ in range(30))
+    username = f"admin-{os.environ['SERVER_NAME']}"
     password = "".join(random.choice(string.digits + string.ascii_lowercase) for _ in range(30))
     PATH_ADMIN_USER_CREDENTIALS.write_text(
         json.dumps({"username": username, "password": password})
