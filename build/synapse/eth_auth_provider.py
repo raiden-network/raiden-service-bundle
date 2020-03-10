@@ -72,7 +72,7 @@ class EthAuthProvider:
     def __init__(self, config, account_handler):
         self.account_handler = account_handler
         self.config = config
-        self.hs_hostname = self.account_handler.hs.hostname
+        self.hs_hostname = self.account_handler._hs.hostname
         self.log = logging.getLogger(__name__)
 
     @defer.inlineCallbacks

@@ -1,6 +1,15 @@
-worker_app: synapse.app.federation_sender
+worker_app: synapse.app.federation_reader
 
 # The replication listener on the synapse to talk to.
 worker_replication_host: synapse
 worker_replication_port: 9092
 worker_replication_http_port: 9093
+
+worker_listeners:
+  - type: http
+    tls: false
+    port: 8008
+    resources:
+      - names:
+        - federation
+        compress: false
