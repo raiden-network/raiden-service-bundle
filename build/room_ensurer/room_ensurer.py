@@ -33,7 +33,7 @@ from dataclasses import dataclass
 from enum import IntEnum
 from itertools import chain
 from json import JSONDecodeError
-from typing import Any, Dict, Optional, Set, TextIO, Tuple
+from typing import Any, Dict, Optional, Set, TextIO, Tuple, Union
 from urllib.parse import urlparse
 
 import click
@@ -237,7 +237,21 @@ class RoomEnsurer:
 
     def _create_server_user_power_levels(self) -> Dict[str, Any]:
 
-        server_admin_power_levels: Dict[str, Dict[str, int]] = {"users": {}}
+        server_admin_power_levels: Dict[str, Union[int, Dict[str, int]]] = {
+            "users": {},
+            "users_default": MatrixPowerLevels.USER,
+            "events": {
+                "m.room.power_levels": MatrixPowerLevels.ADMINISTRATOR,
+                "m.room.history_visibility": MatrixPowerLevels.ADMINISTRATOR,
+            },
+            "events_default": MatrixPowerLevels.USER,
+            "state_default": MatrixPowerLevels.MODERATOR,
+            "ban": MatrixPowerLevels.MODERATOR,
+            "kick": MatrixPowerLevels.MODERATOR,
+            "redact": MatrixPowerLevels.MODERATOR,
+            "invite": MatrixPowerLevels.MODERATOR,
+        }
+
         for server_name in self._known_servers:
             username = f"admin-{server_name}".replace(":", "-")
             user_id = f"@{username}:{server_name}"
@@ -245,6 +259,7 @@ class RoomEnsurer:
 
         own_user_id = f"@{self._username}:{self._own_server_name}"
         server_admin_power_levels["users"][own_user_id] = MatrixPowerLevels.ADMINISTRATOR
+
         return server_admin_power_levels
 
     def _create_room(self, server_name: str, room_alias_prefix: str) -> RoomInfo:

@@ -1,4 +1,11 @@
 # ./data is used to store mounted volumes for the containers, which must not be
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+
+
+
 # commited to the repo.
 data
 

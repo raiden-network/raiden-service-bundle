@@ -17,12 +17,9 @@ from matrix_client.errors import MatrixError
 from raiden_contracts.utils.type_aliases import ChainID
 
 import docker
-from raiden.constants import (
-    DISCOVERY_DEFAULT_ROOM,
-    MONITORING_BROADCASTING_ROOM,
-    PATH_FINDING_BROADCASTING_ROOM,
-    Networks,
-)
+from raiden.constants import (DISCOVERY_DEFAULT_ROOM,
+                              MONITORING_BROADCASTING_ROOM,
+                              PATH_FINDING_BROADCASTING_ROOM, Networks)
 from raiden.network.transport.matrix import make_room_alias
 from raiden.network.transport.matrix.client import GMatrixHttpApi
 
@@ -205,14 +202,17 @@ def purge(
                 for i, row in enumerate(cur):
                     click.secho(f"{i}: {row}")
 
-        # check if user activity file already exists
-        if USER_ACTIVITY_PATH.exists():
+        global_user_activity = {
+            "last_update": int(time.time()) - USER_PURGING_THRESHOLD - 1,
+            "network_to_users": {},
+        }
+
+        try:
             global_user_activity = json.loads(USER_ACTIVITY_PATH.read_text())
-        else:
-            USER_ACTIVITY_PATH.touch()
-            global_user_activity = dict()
-            global_user_activity["last_update"] = int(time.time()) - USER_PURGING_THRESHOLD - 1
-            global_user_activity["network_to_users"] = dict()
+        except JSONDecodeError:
+            click.secho(f"{USER_ACTIVITY_PATH} is not a valid JSON. Starting with empty list")
+        except FileNotFoundError:
+            click.secho(f"{USER_ACTIVITY_PATH} not found. Starting with empty list")
 
         # check if there are new networks to add
         for network in Networks:
@@ -231,7 +231,7 @@ def purge(
         USER_ACTIVITY_PATH.write_text(json.dumps(new_global_user_activity))
     finally:
         if docker_restart_label:
-            client = docker.from_env()
+            client = docker.from_env()  # type: ignore
             for container in client.containers.list():
                 if container.attrs["State"]["Status"] != "running" or not container.attrs[
                     "Config"
