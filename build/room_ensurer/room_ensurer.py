@@ -43,10 +43,13 @@ from matrix_client.errors import MatrixError
 from raiden_contracts.utils.type_aliases import ChainID
 from structlog import get_logger
 
-from raiden.constants import (DISCOVERY_DEFAULT_ROOM,
-                              MONITORING_BROADCASTING_ROOM,
-                              PATH_FINDING_BROADCASTING_ROOM, Environment,
-                              Networks)
+from raiden.constants import (
+    DISCOVERY_DEFAULT_ROOM,
+    MONITORING_BROADCASTING_ROOM,
+    PATH_FINDING_BROADCASTING_ROOM,
+    Environment,
+    Networks,
+)
 from raiden.log_config import configure_logging
 from raiden.network.transport.matrix import make_room_alias
 from raiden.network.transport.matrix.client import GMatrixHttpApi
@@ -67,6 +70,10 @@ log = get_logger(__name__)
 
 
 class EnsurerError(Exception):
+    pass
+
+
+class MultipleErrors(EnsurerError):
     pass
 
 
@@ -126,6 +133,7 @@ class RoomEnsurer:
                     exceptions[network] = ex
         if exceptions:
             log.error("Exceptions happened", exceptions=exceptions)
+            raise MultipleErrors(exceptions)
 
     def _ensure_room_for_network(self, network: Networks, alias_fragment: str) -> None:
         log.info(f"Ensuring {alias_fragment} room for {network.name}")
@@ -334,9 +342,8 @@ def main(own_server: str, interval: int, credentials_file: TextIO, log_level: st
 
         try:
             room_ensurer.ensure_rooms()
-
-        except EnsurerError as ex:
-            log.exception(f"{ex} Retrying in 60s.")
+        except EnsurerError:
+            log.error("Retrying in 60s.")
             gevent.sleep(60)
             continue
 
