@@ -259,6 +259,8 @@ services:
     restart: always
     volumes:
       - ${DATA_DIR:-./data}/db:/var/lib/postgresql/data
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: "trust"
     healthcheck:
       test: echo 'select 1' | psql -U postgres > /dev/null || exit 1
 
