@@ -5,7 +5,7 @@ commands:
     parameters:
       image-name:
         description: "Name of the image being built"
-        default: "raidennetwork/raiden-services-bundle"
+        default: "raidennetwork/raiden-service-bundle"
         type: string
       build-target:
         description: "Which component are we building"
