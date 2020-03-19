@@ -314,14 +314,9 @@ services:
     environment:
       - PURGE_SLEEP_UNTIL=05:00:00
     command:
-      - "postgres://postgres@db:5432/synapse"
       - "http://synapse:8008"
       - "--docker-restart-label"
       - "purge_restart_container"
-      - "--keep-newer"
-      - "15"
-      - "--keep-min-msgs"
-      - "3000"
       - "--credentials-file"
       - "/config/admin_user_cred.json"
 # common traefik

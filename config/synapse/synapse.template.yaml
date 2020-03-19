@@ -136,6 +136,17 @@ alias_creation_rules:
     room_id: "*"
     action: deny
 
+## Message Retention Policy ##
+retention:
+  enabled: true
+  default_policy:
+    min_lifetime: 14d # not in use by the servers yet
+    max_lifetime: 15d
+  allowed_lifetime_max: 15d
+  purge_jobs:
+    - longest_max_lifetime: 15d
+      interval: 1d
+
 
 # A list of application service config file to use
 app_service_config_files: []
