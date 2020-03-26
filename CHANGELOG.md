@@ -1,4 +1,9 @@
 ## Changelog
+- 2020-03-26 - `2020.03.0rc0` - **Upgrade release** (Release candidate 0)
+  - Upgrade Synapse to v1.10.0
+  - Replace room history purging with Synapse retention policies
+  - Add a utility to remove inactive users from global rooms
+  - Various other improvements
 - 2019-11-20 - `2019.11.1` - **Upgrade release**
   - This release fixes some issues with the release process of the previous version `2019.11.0`.
 - 2019-11-20 - `2019.11.0` - **Upgrade release**
