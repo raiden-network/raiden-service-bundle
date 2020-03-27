@@ -5,7 +5,7 @@
 This repository contains the documentation and configuration necessary to run a
 Raiden Service Bundle.
 
-**Current release:** [2020.03.0rc0](https://github.com/raiden-network/raiden-service-bundle/tree/2020.03.0rc0)
+**Current release:** [2020.03.0rc1](https://github.com/raiden-network/raiden-service-bundle/tree/2020.03.0rc1)
 
 ## Table of Contents
 
@@ -134,11 +134,11 @@ Note: The default Postgres configuration assumes 16GiB of system RAM
 
 ### Installing
 
-1. Clone the [current release version of this repository](https://github.com/raiden-network/raiden-service-bundle/tree/2020.03.0rc0)
+1. Clone the [current release version of this repository](https://github.com/raiden-network/raiden-service-bundle/tree/2020.03.0rc1)
    to a suitable location on the server:
 
    ```shell
-   git clone -b 2020.03.0rc0 https://github.com/raiden-network/raiden-service-bundle.git
+   git clone -b 2020.03.0rc1 https://github.com/raiden-network/raiden-service-bundle.git
    ```
 1. Copy `.env.template` to `.env` and modify the values to fit your setup (see inline comments for details)
    - We would appreciate it if you allow us access to the monitoring interfaces

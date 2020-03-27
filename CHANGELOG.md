@@ -1,4 +1,6 @@
 ## Changelog
+- 2020-03-27 - `2020.03.0rc1` - **Upgrade release** (Release candidate 1)
+  - Pin the version numbers of required docker / PyPI packages 
 - 2020-03-26 - `2020.03.0rc0` - **Upgrade release** (Release candidate 0)
   - Upgrade Synapse to v1.10.0
   - Replace room history purging with Synapse retention policies
