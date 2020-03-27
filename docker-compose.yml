@@ -29,7 +29,7 @@ services:
   # raiden-services containers
   pfs:
     << : *services-defaults
-    command: ["python3", "-m", "pathfinding_service.cli", "--matrix-server", "https://${SERVER_NAME}"]
+    command: ["python3", "-m", "pathfinding_service.cli", "--matrix-server", "https://${SERVER_NAME}", "--accept-disclaimer"]
     restart: always
     ports:
       - 6001:6000
@@ -57,7 +57,7 @@ services:
 
   ms:
     << : *services-defaults
-    command: ["python3", "-m", "monitoring_service.cli"]
+    command: ["python3", "-m", "monitoring_service.cli", "--accept-disclaimer"]
     restart: always
     ports:
       - 6002:6000
