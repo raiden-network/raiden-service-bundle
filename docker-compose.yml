@@ -29,7 +29,7 @@ services:
   # raiden-services containers
   pfs:
     << : *services-defaults
-    command: ["python3", "-m", "pathfinding_service.cli", "--matrix-server", "https://${SERVER_NAME}", "${PFS_ACCEPT_DISCLAIMER}"]
+    command: ["python3", "-m", "pathfinding_service.cli", "--matrix-server", "https://${SERVER_NAME}"]
     restart: always
     ports:
       - 6001:6000
@@ -41,7 +41,7 @@ services:
       - PFS_KEYSTORE_FILE=/keystore/${KEYSTORE_FILE}
       - PFS_PASSWORD=${PASSWORD}
       - PFS_ETH_RPC=${ETH_RPC}
-      - PFS_ACCEPT_DISCLAIMER=${ACCEPT_PFS_DISCLAIMER}
+      - PFS_ACCEPT_DISCLAIMER=${PFS_ACCEPT_DISCLAIMER}
     depends_on:
       synapse:
         condition: service_healthy
@@ -58,7 +58,7 @@ services:
 
   ms:
     << : *services-defaults
-    command: ["python3", "-m", "monitoring_service.cli", "${MS_ACCEPT_DISCLAIMER}"]
+    command: ["python3", "-m", "monitoring_service.cli"]
     restart: always
     ports:
       - 6002:6000
@@ -68,7 +68,7 @@ services:
       - MS_KEYSTORE_FILE=/keystore/${KEYSTORE_FILE}
       - MS_PASSWORD=${PASSWORD}
       - MS_ETH_RPC=${ETH_RPC}
-      - MS_ACCEPT_DISCLAIMER=${ACCEPT_MS_DISCLAIMER}
+      - MS_ACCEPT_DISCLAIMER=${MS_ACCEPT_DISCLAIMER}
     healthcheck:
       test: 'python3 -c "import sqlite3, sys; from time import sleep; conn=sqlite3.connect(\"/state/ms-state.db\"); r = lambda: conn.execute(\"select latest_committed_block from blockchain ORDER BY latest_committed_block DESC LIMIT 1;\").fetchone()[0]; one = r(); sleep(25); two = r(); print(two); sys.exit(0 if two > one else 1)"'
 
