@@ -84,6 +84,7 @@ services:
       - MSRC_KEYSTORE_FILE=/keystore/${KEYSTORE_FILE}
       - MSRC_PASSWORD=${PASSWORD}
       - MSRC_CHAIN_ID=${CHAIN_ID}
+      - MSRC_ACCEPT_DISCLAIMER=${MS_ACCEPT_DISCLAIMER}
     depends_on:
       synapse:
         condition: service_healthy
