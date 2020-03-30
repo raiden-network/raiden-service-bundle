@@ -71,6 +71,7 @@ services:
       - MS_ACCEPT_DISCLAIMER=${MS_ACCEPT_DISCLAIMER}
     healthcheck:
       test: 'python3 -c "import sqlite3, sys; from time import sleep; conn=sqlite3.connect(\"/state/ms-state.db\"); r = lambda: conn.execute(\"select latest_committed_block from blockchain ORDER BY latest_committed_block DESC LIMIT 1;\").fetchone()[0]; one = r(); sleep(25); two = r(); print(two); sys.exit(0 if two > one else 1)"'
+      start_period: 300s
 
   msrc:
     << : *services-defaults
