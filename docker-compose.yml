@@ -235,7 +235,7 @@ services:
       - "traefik.http.services.user_dir.loadbalancer.sticky=true"
 
   event_creator:
-    image: *IMAGE_SYNAPSE_VERSION
+    << : *IMAGE_SYNAPSE_VERSION
     restart: always
     volumes:
       - ./config/synapse:/config
