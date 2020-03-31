@@ -1,4 +1,4 @@
-# Raiden Service Bundle
+# Raiden Service Bundle (RSB)
 
 ## What is this repository
 
@@ -125,14 +125,22 @@ Note: The default Postgres configuration assumes 16GiB of system RAM
 1. Ensure a domain (or subdomain) is available
 
    Examples:
-   - raidentransport.somecompany.tld
-   - raidentransport-somecompany.tld
-   - somecompany-raidentransport.tld
+   - raiden.somedomain.com
 
 1. Configure `A` (and optionally `AAAA`) DNS records for the domain pointing to the servers IP address(es)
 1. Configure a `CNAME` DNS record for `*.<domain>` pointing back to `<domain>`
 
-### Installing
+### Registering as a RSB Provider
+If you want to participate in the network by running a Raiden Service Bundle you need to register yourself as a provider. Currently, there are two conditions that must be fulfilled to run the RSB successfully.
+
+1. **Registering in the Services Registry On-Chain**  
+  - In order to register as a service provider you need to run the script `register-service-provider.sh` as described in step 3 and 4 in *Installing the RSB* written below. 
+
+2. **Extending `known_servers.main.yaml`**  
+  - In order to be whitelisted in the Matrix Federation, the list needs to be extended with your server name. Open an issue in this repository with the request to be added to the list. Please, state your server name as you have set `$SERVER_NAME` in your `.env` file.
+
+
+### Installing the RSB
 
 1. Clone the [current release version of this repository](https://github.com/raiden-network/raiden-service-bundle/tree/2020.03.0rc1)
    to a suitable location on the server:
@@ -148,7 +156,22 @@ Note: The default Postgres configuration assumes 16GiB of system RAM
 1. If you haven't done so before, run `./register-service-provider.sh` (it uses configuration values from `.env`).
 1. Run `docker-compose up -d` to start all services
    - The services are configured to automatically restart in case of a crash or reboot
-1. Verify the service is up by opening the domain in a browser. You should see a page with the Matrix logo.
+
+---
+**NOTE**
+
+Being accepted in the whitelist as a part of the federation currently takes up to 24 hours after your server name has been added to `known_servers.main.yaml`. After running `docker-compose up -d` you will likely encounter errors but you don't need to worry about them as they will resolve over time. The RSB is configured to restart upon failure automatically. Please verify that your RSB is connected and running successfully after a period of 24 hours.
+
+---
+
+### Verifying that the RSB is working
+
+- Matrix
+
+- PFS
+
+- MS
+
 
 ### Troubleshooting
 After starting, you can run `docker-compose ps` -- if any services are not in `Up`, `Up (healthy)` or `Exit 0` state, you should check the respective logs for configuration errors.
