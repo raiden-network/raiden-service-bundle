@@ -25,6 +25,13 @@ x-defaults: &services-defaults
     - ${DATA_DIR:-./data}/state:/state
     - ${DATA_DIR:-./data}/keystore:/keystore
 
+x-log-config: &log-config
+  logging:
+    driver: json-file
+    options:
+      max-size: 20m
+      max-file: 10
+
 services:
   # raiden-services containers
   pfs:
@@ -45,6 +52,9 @@ services:
     depends_on:
       synapse:
         condition: service_healthy
+    healthcheck:
+      disable: true
+    << : *log-config
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.pfs.rule=Host(`pfs.${SERVER_NAME}`)"
@@ -53,8 +63,6 @@ services:
       - "traefik.http.routers.pfs.tls.certresolver=le"
       - "traefik.http.routers.pfs.service=pfs"
       - "traefik.http.services.pfs.loadbalancer.healthcheck.path=/api/v1/info"
-    healthcheck:
-      disable: true
 
   ms:
     << : *services-defaults
@@ -72,7 +80,7 @@ services:
     healthcheck:
       test: 'python3 -c "import sqlite3, sys; from time import sleep; conn=sqlite3.connect(\"/state/ms-state.db\"); r = lambda: conn.execute(\"select latest_committed_block from blockchain ORDER BY latest_committed_block DESC LIMIT 1;\").fetchone()[0]; one = r(); sleep(25); two = r(); print(two); sys.exit(0 if two > one else 1)"'
       start_period: 30s
-
+    << : *log-config
 
   msrc:
     << : *services-defaults
@@ -94,6 +102,7 @@ services:
         condition: service_healthy
     healthcheck:
       disable: true
+    << : *log-config
 
 # raiden-transport containers
   synapse:
@@ -110,6 +119,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    << : *log-config
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.synapse.rule=Host(`${SERVER_NAME}`)"
@@ -142,6 +152,7 @@ services:
     healthcheck:
       disable: true
     scale: ${WORKER_COUNT:-4}
+    <<: *log-config
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.synchrotron.rule=Host(`${SERVER_NAME}`) && (PathPrefix(`/_matrix/client/{version:(v2_alpha|r0)}/sync`) || PathPrefix(`/_matrix/client/{version:(api/v1|v2_alpha|r0)}/events`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0)}/initialSync`) && PathPrefix(`/_matrix/client/{version:(api/v1|r0)}/rooms/{room:[^/]+}/initialSync`))"
@@ -165,6 +176,7 @@ services:
     entrypoint: ["/synapse-venv/bin/python", "-m", "synapse.app.federation_reader", "--config-path", "/config/synapse.yaml", "--config-path", "/config/workers/federation_reader.yaml"]
     healthcheck:
       disable: true
+    << : *log-config
     labels:
       - "traefik.enable=true"
       - "traefik.frontend.rule=Host(`${SERVER_NAME}`) && (PathPrefix(`/_matrix/federation/v1/{type:(backfill|event|event_auth|exchange_third_party_invite|get_missing_events|invite|make_join|make_leave|publicRoom|query|query_auth|send|send_join|send_leave|state|state_ids)}`) || PathPrefix(`/_matrix/federation/v2/{type:(invite|send_join|send_leave)}`) || PathPrefix(`/_matrix/key/v2/query`))"
@@ -187,6 +199,7 @@ services:
     entrypoint: ["/synapse-venv/bin/python", "-m", "synapse.app.federation_sender", "--config-path", "/config/synapse.yaml", "--config-path", "/config/workers/federation_sender.yaml"]
     healthcheck:
       disable: true
+    << : *log-config
 
   client_reader:
     << : *IMAGE_SYNAPSE_VERSION
@@ -201,6 +214,7 @@ services:
         condition: service_healthy
     entrypoint: ["/synapse-venv/bin/python", "-m", "synapse.app.client_reader", "--config-path", "/config/synapse.yaml", "--config-path", "/config/workers/client_reader.yaml"]
     scale: ${WORKER_COUNT:-4}
+    << : *log-config
     labels:
       - "traefik.enable=true"
       - "traefik.frontend.rule=Host(`${SERVER_NAME}`) && (PathPrefix(`/_matrix/client/versions`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/publicRooms`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/rooms/{room:.*}/joined_members`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/rooms/{room:.*}/context/{context:.*}`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/rooms/{room:.*}/members`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/rooms/{room:.*}/state`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/account/3pid`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/keys/query`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/keys/changes`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/voip/turnServer`))"
@@ -225,6 +239,7 @@ services:
     healthcheck:
       disable: true
     scale: ${WORKER_COUNT:-4}
+    << : *log-config
     labels:
       - "traefik.enable=true"
       - "traefik.frontend.rule=Host(`${SERVER_NAME}`) && PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/user_directory/search`)"
@@ -249,6 +264,7 @@ services:
     healthcheck:
       disable: true
     scale: ${WORKER_COUNT:-4}
+    << : *log-config
     labels:
       - "traefik.enable=true"
       - "traefik.frontend.rule=Host(`${SERVER_NAME}`) && (PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/rooms/{room:.*}/send`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/rooms/{room:.*}/{action:(join|invite|leave|ban|unban|kick)}`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/join/`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/profile/`))"
@@ -268,6 +284,7 @@ services:
       POSTGRES_HOST_AUTH_METHOD: "trust"
     healthcheck:
       test: echo 'select 1' | psql -U postgres > /dev/null || exit 1
+    << : *log-config
 
   # Serves the .well-known/matrix/server file
   well_known_server:
@@ -278,6 +295,7 @@ services:
     depends_on:
       synapse:
         condition: service_healthy
+    << : *log-config
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.well-known.rule=Host(`${SERVER_NAME}`) && PathPrefix(`/.well-known/matrix`)"
@@ -303,6 +321,7 @@ services:
       - "DEBUG"
       - "--credentials-file"
       - "/config/admin_user_cred.json"
+    << : *log-config
 
   purger:
     << : *IMAGE_PURGER_VERSION
@@ -324,6 +343,8 @@ services:
       - "purge_restart_container"
       - "--credentials-file"
       - "/config/admin_user_cred.json"
+    << : *log-config
+
 # common traefik
   traefik:
     << : *IMAGE_TRAEFIK_VERSION
@@ -338,6 +359,7 @@ services:
     command: --certificatesResolvers.le.acme.email=${LETSENCRYPT_EMAIL}
     healthcheck:
       disable: true
+    << : *log-config
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.traefik.rule=Host(`proxy.${SERVER_NAME}`)"
