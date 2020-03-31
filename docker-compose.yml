@@ -29,8 +29,8 @@ x-log-config: &log-config
   logging:
     driver: json-file
     options:
-      max-size: 20m
-      max-file: 10
+      max-size: "20m"
+      max-file: "10"
 
 services:
   # raiden-services containers
