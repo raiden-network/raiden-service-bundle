@@ -116,6 +116,7 @@ Note: The default Postgres configuration assumes 16GiB of system RAM
 ### Other
 
 - A domain (or subdomain) for exclusive use by this server
+- No other than this software should be used in production on this server 
 
 ## Installation
 
@@ -130,14 +131,7 @@ Note: The default Postgres configuration assumes 16GiB of system RAM
 1. Configure `A` (and optionally `AAAA`) DNS records for the domain pointing to the servers IP address(es)
 1. Configure a `CNAME` DNS record for `*.<domain>` pointing back to `<domain>`
 
-### Registering as a RSB Provider
-If you want to participate in the network by running a Raiden Service Bundle you need to register yourself as a provider. Currently, there are two conditions that must be fulfilled to run the RSB successfully.
 
-1. **Registering in the Services Registry On-Chain**  
-  - In order to register as a service provider you need to run the script `register-service-provider.sh` as described in step 3 and 4 in *Installing the RSB* written below. 
-
-2. **Extending `known_servers.main.yaml`**  
-  - In order to be whitelisted in the Matrix Federation, the list needs to be extended with your server name. Open an issue in this repository with the request to be added to the list. Please, state your server name as you have set `$SERVER_NAME` in your `.env` file.
 
 
 ### Installing the RSB
@@ -152,7 +146,8 @@ If you want to participate in the network by running a Raiden Service Bundle you
    - We would appreciate it if you allow us access to the monitoring interfaces
      (to do that uncomment the default values of the `CIDR_ALLOW_METRICS` and `CIDR_ALLOW_PROXY` settings).
    - We also recommend that you provide your own monitoring. The setup of which is currently out of scope of this document.
-1. Make sure, that the account, configured in `KEYSTORE_FILE`, has enough funding to register as a service operator.
+   - Please, read carefully the disclaimers for the path finding and monitoring service and uncomment the variables `XX_ACCEPT_DISCLAIMER` if you agree. Note, that the services won't start if you do not. 
+1. Make sure, that the account, configured in `KEYSTORE_FILE`, has enough funding to register as a service operator (you might want to have a look at *Registering as a RSB Provider* below first).
 1. If you haven't done so before, run `./register-service-provider.sh` (it uses configuration values from `.env`).
 1. Run `docker-compose up -d` to start all services
    - The services are configured to automatically restart in case of a crash or reboot
@@ -163,6 +158,16 @@ If you want to participate in the network by running a Raiden Service Bundle you
 Being accepted in the whitelist as a part of the federation currently takes up to 24 hours after your server name has been added to `known_servers.main.yaml`. After running `docker-compose up -d` you will likely encounter errors but you don't need to worry about them as they will resolve over time. The RSB is configured to restart upon failure automatically. Please verify that your RSB is connected and running successfully after a period of 24 hours.
 
 ---
+
+### Registering as a RSB Provider
+If you want to participate in the network by running a Raiden Service Bundle you need to register yourself as a provider. Currently, there are two conditions that must be fulfilled to run the RSB successfully.
+
+1. **Registering in the Services Registry On-Chain**  
+  - In order to register as a service provider you need to run the script `register-service-provider.sh` as described in step 3 and 4 in *Installing the RSB* written below. 
+
+2. **Extending `known_servers.main.yaml`**  
+  - In order to be whitelisted in the Matrix Federation, the list needs to be extended with your server name. Open an issue in this repository with the request to be added to the list. Please, state your server name as you have set `$SERVER_NAME` in your `.env` file.
+
 
 ### Verifying that the RSB is working
 
