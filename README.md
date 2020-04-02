@@ -117,7 +117,7 @@ Note: The default Postgres configuration assumes 16GiB of system RAM
 ### Other
 
 - A domain (or subdomain) for exclusive use by this server
-- No other than this software should be used in production on this server 
+- No other software should be used in production on this server 
 
 ## Installation
 
@@ -147,9 +147,8 @@ Note: The default Postgres configuration assumes 16GiB of system RAM
    - We would appreciate it if you allow us access to the monitoring interfaces
      (to do that uncomment the default values of the `CIDR_ALLOW_METRICS` and `CIDR_ALLOW_PROXY` settings).
    - We also recommend that you provide your own monitoring. The setup of which is currently out of scope of this document.
-   - Please, read carefully the disclaimers for the path finding and monitoring service and uncomment the variables `XX_ACCEPT_DISCLAIMER` if you agree. Note, that the services won't start if you do not. 
-1. Make sure, that the account, configured in `KEYSTORE_FILE`, has enough funding to register as a service operator (you might want to have a look at [Registering as a RSB Provider](#installation/registering) below first). Make sure that the account is stored in `${DATA_DIR}/keystore/`.
-1. If you haven't done so before, run `./register-service-provider.sh` (it uses configuration values from `.env`).
+   - Please, read carefully the disclaimers for the path finding and monitoring service and uncomment the variables `XX_ACCEPT_DISCLAIMER` if you agree. Note, that the services won't start if you do not.
+1. If you haven't done so before, run `./register-service-provider.sh` (it uses configuration values from `.env`). Please read the information provided [Registering as a RSB Provider](#installation/registering) carefully before executing the script.
 1. Run `docker-compose up -d` to start all services
    - The services are configured to automatically restart in case of a crash or reboot
 
@@ -164,7 +163,10 @@ Being accepted in the whitelist as a part of the federation currently takes up t
 If you want to participate in the network by running a Raiden Service Bundle you need to register yourself as a provider. Currently, there are two conditions that must be fulfilled to run the RSB successfully.
 
 1. **Registering in the Services Registry On-Chain**  
-  - In order to register as a service provider you need to run the script [`register-service-provider.sh`](https://github.com/raiden-network/raiden-service-bundle/blob/master/register-service-provider.sh) as described in step 3 and 4 in [Installing the RSB](#installation/installing) written above. 
+  - In order to register as a service provider you need to run the script [`register-service-provider.sh`](https://github.com/raiden-network/raiden-service-bundle/blob/master/register-service-provider.sh).
+  - Make sure that the account is stored in `${DATA_DIR}/keystore/`. If not, the script will exit with an error and you cannot register as a service provider.
+  - Make sure, that the account, configured in `KEYSTORE_FILE`, has enough funding to register as a service provider. Click [here](https://goerli.etherscan.io/address/0x735722704e365c37247bb3e4ec52d6c937c54539#readContract) to find out what the current price for a slot is. You will find the price under `3. currentPrice` denominated in RDN. Otherwise, the script will tell you the price, too.
+
 
 2. **Extending `known_servers.main.yaml`**  
   - In order to be whitelisted in the Matrix Federation, the list needs to be extended with your server name.
