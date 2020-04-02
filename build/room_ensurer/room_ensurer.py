@@ -101,7 +101,7 @@ class RoomEnsurer:
 
         self._known_servers: Dict[str, str] = {
             urlparse(server_url).netloc: server_url
-            for server_url in sorted(get_matrix_servers(known_servers_url))
+            for server_url in get_matrix_servers(known_servers_url)
         }
         if not self._known_servers:
             raise RuntimeError(f"No known servers found from list at {known_servers_url}.")
