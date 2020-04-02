@@ -165,7 +165,7 @@ If you want to participate in the network by running a Raiden Service Bundle you
 1. **Registering in the Services Registry On-Chain**  
   - In order to register as a service provider you need to run the script [`register-service-provider.sh`](https://github.com/raiden-network/raiden-service-bundle/blob/master/register-service-provider.sh).
   - Make sure that the account is stored in `${DATA_DIR}/keystore/`. If not, the script will exit with an error and you cannot register as a service provider.
-  - Make sure, that the account, configured in `KEYSTORE_FILE`, has enough funding to register as a service provider. Click [here](https://goerli.etherscan.io/address/0x735722704e365c37247bb3e4ec52d6c937c54539#readContract) to find out what the current price for a slot is. You will find the price under `3. currentPrice` denominated in RDN. Otherwise, the script will tell you the price, too.
+  - Make sure, that the account, configured in `KEYSTORE_FILE`, has enough funding to register as a service provider. Click [here](https://goerli.etherscan.io/address/0x735722704e365c37247bb3e4ec52d6c937c54539#readContract) (Currently deployed on goerli) to find out what the current price for a slot is. You will find the price under `3. currentPrice` denominated in SVT. Otherwise, the script will tell you the price, too.
 
 
 2. **Extending `known_servers.main.yaml`**  
