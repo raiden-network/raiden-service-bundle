@@ -184,6 +184,7 @@ services:
       - "traefik.http.routers.federation_reader.tls.certresolver=le"
       - "traefik.http.routers.federation_reader.service=federation_reader"
       - "traefik.http.services.federation_reader.loadbalancer.server.port=8008"
+      - "purge_restart_container=true"
 
   federation_sender:
     << : *IMAGE_SYNAPSE_VERSION
@@ -200,6 +201,8 @@ services:
     healthcheck:
       disable: true
     << : *log-config
+    labels:
+      - "purge_restart_container=true"
 
   client_reader:
     << : *IMAGE_SYNAPSE_VERSION
