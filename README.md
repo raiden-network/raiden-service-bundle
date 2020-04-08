@@ -50,17 +50,17 @@ may also provide configurations with services split among multiple servers.
 |                   |
 |   Raiden clients  |
 |                   |
-+---+-----------+---+
-    |matrix://  |pfs://
-====|===========|====
-    |           |
-+---v-----------v---+                       Federation to
++---------+---------+
+          |https://
+==========|==========
+          |
++---------v---------+                       Federation to
 |                 +-+-------------------->  other Raiden
 |      Traefik    | |                       Matrix servers
-|                 | |
-+---------+-------+-+---------+
-          |       |           |
-+---------v-------v-+   +-----v----------------+ +---------------------+
+|                 |-+---------+----------------------+
++---------+-------+-+         |                      |
+          |       |           |                      |
++---------v-------v-+   +-----v----------------+ +---v-----------------+
 |                   |   |                      | |                     |
 |      Synapse      |   |  Raiden Pathfinding  | |  Raiden Monitoring  |
 |                   |   |                      | |                     |
@@ -117,7 +117,7 @@ Note: The default Postgres configuration assumes 16GiB of system RAM
 ### Other
 
 - A domain (or subdomain) for exclusive use by this server
-- No other software should be used in production on this server 
+- To ensure acceptable performance the server should be reserved for exclusive use by the RSB.
 
 ## Installation
 
@@ -128,14 +128,21 @@ Note: The default Postgres configuration assumes 16GiB of system RAM
 
    Examples:
    - raiden.somedomain.com
+   - raiden-service-bundle-somecompany.tld
 
 1. Configure `A` (and optionally `AAAA`) DNS records for the domain pointing to the servers IP address(es)
 1. Configure a `CNAME` DNS record for `*.<domain>` pointing back to `<domain>`
 
 
+**NOTE:**
+
+If you intend to use a subdomain it is important to be aware of the security implications. 
+Sudomains share Cookies and Browser LocalStoarage with the apex domain. 
+Therefore we strongly suggest that a subdomain is only used below an apex domain that does *not* 
+host an application that relies on either Cookies or LocalStorage for security relevant purposes (e.g. user authentication).
 
 
-### Installing the RSB <a name="installation/installing" />
+### Installing the RSB
 
 1. Clone the [current release version of this repository](https://github.com/raiden-network/raiden-service-bundle/tree/2020.03.0rc1)
    to a suitable location on the server:
@@ -147,45 +154,69 @@ Note: The default Postgres configuration assumes 16GiB of system RAM
    - We would appreciate it if you allow us access to the monitoring interfaces
      (to do that uncomment the default values of the `CIDR_ALLOW_METRICS` and `CIDR_ALLOW_PROXY` settings).
    - We also recommend that you provide your own monitoring. The setup of which is currently out of scope of this document.
-   - Please, read carefully the disclaimers for the path finding and monitoring service and uncomment the variables `XX_ACCEPT_DISCLAIMER` if you agree. Note, that the services won't start if you do not.
-1. If you haven't done so before, run `./register-service-provider.sh` (it uses configuration values from `.env`). Please read the information provided [Registering as a RSB Provider](#installation/registering) carefully before executing the script.
+   - Please read the disclaimers for the path finding and monitoring services carefully and uncomment the variables `<SERVICE>_ACCEPT_DISCLAIMER` if you agree. Note, that without agreement the services won't start.
+1. If you haven't done so before, run `./register-service-provider.sh` (it uses configuration values from `.env`). Please read the information provided [Registering as a RSB Provider](#registering-as-a-rsb-provider-) carefully before executing the script.
 1. Run `docker-compose up -d` to start all services
    - The services are configured to automatically restart in case of a crash or reboot
 
----
-**NOTE**
+**NOTE:**
 
-Being accepted in the whitelist as a part of the federation currently takes up to 24 hours after your server name has been added to `known_servers.main.yaml`. After running `docker-compose up -d` you will likely encounter errors but you don't need to worry about them as they will resolve over time. The RSB is configured to restart upon failure automatically. Please verify that your RSB is connected and running successfully after a period of 24 hours.
+After a new RSB has been registered and added to the `known_servers.main.yaml` file it can take up 
+to 24 hours for the information to propagate to existing RSB installations.  
 
----
+During this time some services will not yet be able to start successfully and log 
+various error messages. This is expected behaviour and will resolve itself. 
 
-### Registering as a RSB Provider <a name="installation/registering" />
-If you want to participate in the network by running a Raiden Service Bundle you need to register yourself as a provider. Currently, there are two conditions that must be fulfilled to run the RSB successfully.
+After the 24h have elapsed all services should run successfully.
+See [verifying that the RSB is working](#verifying-that-the-rsb-is-working) below.
+
+
+### Registering as an RSB Provider
+For your newly deployed Raiden Service Bundle to be used by Raiden nodes it must be registered.
 
 1. **Registering in the Services Registry On-Chain**  
   - In order to register as a service provider you need to run the script [`register-service-provider.sh`](https://github.com/raiden-network/raiden-service-bundle/blob/master/register-service-provider.sh).
-  - Make sure that the account is stored in `${DATA_DIR}/keystore/`. If not, the script will exit with an error and you cannot register as a service provider.
-  - Make sure, that the account, configured in `KEYSTORE_FILE`, has enough funding to register as a service provider. Click [here](https://goerli.etherscan.io/address/0x735722704e365c37247bb3e4ec52d6c937c54539#readContract) (Currently deployed on goerli) to find out what the current price for a slot is. You will find the price under `3. currentPrice` denominated in SVT. Otherwise, the script will tell you the price, too.
+  - Make sure that you have configured a keystore file (`$KEYSTORE_FILE` in `.env`). If not, the script will exit with an error and you cannot register as a service provider.
+  - Make sure that the configured account has enough funding to register as a service provider. 
+    You can check the [registry contract](https://goerli.etherscan.io/address/0x735722704e365c37247bb3e4ec52d6c937c54539#readContract) (Currently deployed on goerli) for the current price of a slot. 
+    You will find the price under `3. currentPrice` denominated in SVT. 
+    The script will also inform you about price as well.
 
 
 2. **Extending `known_servers.main.yaml`**  
   - In order to be whitelisted in the Matrix Federation, the list needs to be extended with your server name.
   - [Create an issue](https://github.com/raiden-network/raiden-service-bundle/issues/new) and submit the
-   domain / URL of the newly deployed server for inclusion in the list of known servers. Please, state your server name as you have set `$SERVER_NAME` in your `.env` file.
+   domain / URL of the newly deployed server for inclusion in the list of known servers. 
+   Please, state your server name as you have set `$SERVER_NAME` in your `.env` file.
 
 ### Verifying that the RSB is working
 
+Check the status of the services by executing `docker-compose ps`. 
+If any services are in a state other than `Up`, `Up (healthy)` or `Exit 0` after the elapse of the 24h waiting period a configuration problem is the most likely cause.  
+See [troubleshooting the RSB installation](#troubleshooting-the-rsb-installation) below in that case.
+
 - Matrix
+  - Check that the following endpoints return a successful response (HTTP status 200): 
+    - `https://transport.<SERVER_NAME>/_matrix/client/versions`
+    - `https://transport.<SERVER_NAME>/_matrix/client/api/v1/publicRooms`
 
 - PFS
+  - Check that the `latest_committed_block` is increasing regularly:
+  
+    `docker-compose logs --tail 100 pfs | grep latest_committed_block`
+  - Check that the following endpoint returns a successful response (HTTP status 200):
+    - `https://pfs.<SERVER_NAME>/api/v1/info`
+
 
 - MS
+  - Check that the `latest_confirmed_block` is increasing regularly:
+  
+    `docker-compose logs --tail 100 ms | grep latest_confirmed_block`
 
 
 ### Troubleshooting the RSB installation
-After starting, you can run `docker-compose ps` -- if any services are not in `Up`, `Up (healthy)` or `Exit 0` state, you should check the respective logs for configuration errors.
-Note: some services might need a few minutes to become healthy.
 
+TBD
 
 
 ## Upgrades
@@ -201,8 +232,10 @@ docker-compose up -d
 ```
 ## Notes:
 
- - A 'purge' script/service will run once a day, pruning old state from rooms to save disk space,
-   and restarting the ``synapse`` service to fetch an up-to-date whitelist of servers.
+ - A 'purger' service will run once a day, removing inactive users from global rooms
+  to save disk space and processing performance.
+  Additionally if necessary it will restart the ``synapse`` service to fetch an up-to-date 
+  whitelist of servers.
 
 ## Known issues
 
@@ -227,11 +260,11 @@ or contact us via email at contact@raiden.nework.
 
 
 ## Changelog
-See [`CHANGELOG.md`](https://github.com/raiden-network/raiden-service-bundle/blob/master/CHANGELOG.md).
+See [`CHANGELOG.md`](./CHANGELOG.md).
 
 ## Licenses
 
-The code and documentation in this repository are released under the [MIT license](LICENSE).
+The code and documentation in this repository are released under the [MIT license](./LICENSE).
 
 This repository contains instructions to install third party software. Those are licensed as follows:
 
