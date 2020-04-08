@@ -24,9 +24,9 @@ This utility uses for following algorithm to ensure there are no races in room c
 """
 from gevent.monkey import patch_all  # isort:skip
 
-from raiden.utils.datastructures import merge_dict
-
 patch_all()  # isort:skip
+
+from raiden.utils.datastructures import merge_dict
 
 import json
 import os
@@ -269,7 +269,7 @@ class RoomEnsurer:
         for server_name in self._known_servers:
             username = f"admin-{server_name}".replace(":", "-")
             user_id = f"@{username}:{server_name}"
-            server_admin_power_levels["users"][user_id] = MatrixPowerLevels.MODERATOR
+            server_admin_power_levels["users"][user_id] = MatrixPowerLevels.ADMINISTRATOR
 
         own_user_id = f"@{self._username}:{self._own_server_name}"
         server_admin_power_levels["users"][own_user_id] = MatrixPowerLevels.ADMINISTRATOR
@@ -300,7 +300,7 @@ class RoomEnsurer:
             log.debug(f"Power levels are up to date. Doing nothing.")
             return
 
-        merge_dict(supposed_power_levels, current_power_levels)
+        merge_dict(current_power_levels, supposed_power_levels)
         try:
             api.set_power_levels(room_info.room_id, supposed_power_levels)
         except MatrixError:
