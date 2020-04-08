@@ -6,8 +6,8 @@ IMAGE=$(grep "raidennetwork/raiden-services:" docker-compose.yml|cut -d ':' -f2-
 CMD="python3 -m raiden_libs.service_registry register"
 
 docker run --rm -it \
-  -v ${DATA_DIR:-./data}/state:/state \
-  -v ${DATA_DIR:-./data}/keystore:/keystore \
+  -v ${DATA_DIR:-$(pwd)/data}/state:/state \
+  -v ${DATA_DIR:-$(pwd)/data}/keystore:/keystore \
   -e SR_REGISTER_LOG_LEVEL=${LOG_LEVEL} \
   -e SR_REGISTER_KEYSTORE_FILE=/keystore/${KEYSTORE_FILE} \
   -e SR_REGISTER_PASSWORD=${PASSWORD} \
