@@ -24,6 +24,8 @@ This utility uses for following algorithm to ensure there are no races in room c
 """
 from gevent.monkey import patch_all  # isort:skip
 
+from raiden.utils.datastructures import merge_dict
+
 patch_all()  # isort:skip
 
 import json
@@ -57,6 +59,7 @@ from raiden.settings import DEFAULT_MATRIX_KNOWN_SERVERS
 from raiden.tests.utils.factories import make_signer
 from raiden.utils.cli import get_matrix_servers
 
+
 ENV_KEY_KNOWN_SERVERS = "URL_KNOWN_FEDERATION_SERVERS"
 
 
@@ -86,11 +89,11 @@ class RoomInfo:
 
 class RoomEnsurer:
     def __init__(
-        self,
-        username: str,
-        password: str,
-        own_server_name: str,
-        known_servers_url: Optional[str] = None,
+            self,
+            username: str,
+            password: str,
+            own_server_name: str,
+            known_servers_url: Optional[str] = None,
     ):
         self._username = username
         self._password = password
@@ -207,8 +210,11 @@ class RoomEnsurer:
                 },
             )
 
+        # Ensure that all admins have admin power levels
+        self._ensure_admin_power_levels(room_infos[self._own_server_name])
+
     def _join_and_alias_room(
-        self, first_server_room_alias: str, own_server_room_alias: str
+            self, first_server_room_alias: str, own_server_room_alias: str
     ) -> None:
         response = self._own_api.join_room(first_server_room_alias)
         own_room_id = response.get("room_id")
@@ -270,6 +276,36 @@ class RoomEnsurer:
 
         return server_admin_power_levels
 
+    def _ensure_admin_power_levels(self, room_info: RoomInfo) -> None:
+        log.info(f"Ensuring power levels for {room_info.aliases}")
+        api = self._apis[self._own_server_name]
+        own_user = f"@{self._username}:{self._own_server_name}"
+        supposed_power_levels = self._create_server_user_power_levels()
+
+        try:
+            current_power_levels = api.get_room_state_type(
+                room_info.room_id, "m.room.power_levels", ""
+            )
+        except MatrixError:
+            log.debug("Could not fetch power levels", room_aliases=room_info.aliases)
+            return
+
+        if own_user not in current_power_levels["users"]:
+            log.warning(f"{own_user} has not been granted administrative power levels yet. Doing nothing.")
+            return
+
+        # the supposed power level dict could be just a subset of the current
+        # because providers who left cannot be removed from other admins
+        if set(supposed_power_levels["users"].keys()).issubset(set(current_power_levels["users"].keys())):
+            log.debug(f"Power levels are up to date. Doing nothing.")
+            return
+
+        merge_dict(supposed_power_levels, current_power_levels)
+        try:
+            api.set_power_levels(room_info.room_id, supposed_power_levels)
+        except MatrixError:
+            log.debug("Could not set power levels", room_aliases=room_info.aliases)
+
     def _create_room(self, server_name: str, room_alias_prefix: str) -> RoomInfo:
         api = self._apis[server_name]
         server_admin_power_levels = self._create_server_user_power_levels()
@@ -278,6 +314,7 @@ class RoomEnsurer:
             is_public=True,
             power_level_content_override=server_admin_power_levels,
         )
+
         room_alias = f"#{room_alias_prefix}:{server_name}"
         return RoomInfo(response["room_id"], {room_alias}, server_name)
 
