@@ -98,8 +98,6 @@ services:
     depends_on:
       synapse:
         condition: service_healthy
-      ms:
-        condition: service_healthy
     healthcheck:
       disable: true
     << : *log-config
