@@ -1,4 +1,10 @@
 ## Changelog
+- 2020-04-09 - `2020.03.0rc2` - **Upgrade release** (Release candidate 2)
+  - matrix servers are reachable with subdomain `transport.<SERVER_NAME>`
+  - known servers is ordered as in the list
+  - Readme refinement
+  - MSRC and MS containers have no dependency
+  - Optimize functionality when new provider is added to the list
 - 2020-03-27 - `2020.03.0rc1` - **Upgrade release** (Release candidate 1)
   - Pin the version numbers of required docker / PyPI packages 
 - 2020-03-26 - `2020.03.0rc0` - **Upgrade release** (Release candidate 0)
