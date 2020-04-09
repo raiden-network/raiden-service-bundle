@@ -15,7 +15,7 @@ x-versions:
   purger: &IMAGE_PURGER_VERSION
     image: raidennetwork/raiden-service-bundle:2020.03.0rc2-purger
   traefik: &IMAGE_TRAEFIK_VERSION
-     image: traefik:2.1
+     image: traefik:2.2
 # /versions
 
 x-defaults: &services-defaults
