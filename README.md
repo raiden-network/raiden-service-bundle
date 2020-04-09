@@ -5,7 +5,7 @@
 This repository contains the documentation and configuration necessary to run a
 Raiden Service Bundle.
 
-**Current release:** [2020.03.0rc1](https://github.com/raiden-network/raiden-service-bundle/tree/2020.03.0rc1)
+**Current release:** [2020.03.0rc2](https://github.com/raiden-network/raiden-service-bundle/tree/2020.03.0rc2)
 
 ## Table of Contents
 
@@ -144,11 +144,11 @@ host an application that relies on either Cookies or LocalStorage for security r
 
 ### Installing the RSB
 
-1. Clone the [current release version of this repository](https://github.com/raiden-network/raiden-service-bundle/tree/2020.03.0rc1)
+1. Clone the [current release version of this repository](https://github.com/raiden-network/raiden-service-bundle/tree/2020.03.0rc2)
    to a suitable location on the server:
 
    ```shell
-   git clone -b 2020.03.0rc1 https://github.com/raiden-network/raiden-service-bundle.git
+   git clone -b 2020.03.0rc2 https://github.com/raiden-network/raiden-service-bundle.git
    ```
 1. Copy `.env.template` to `.env` and modify the values to fit your setup (see inline comments for details)
    - We would appreciate it if you allow us access to the monitoring interfaces
@@ -178,8 +178,8 @@ For your newly deployed Raiden Service Bundle to be used by Raiden nodes it must
   - In order to register as a service provider you need to run the script [`register-service-provider.sh`](https://github.com/raiden-network/raiden-service-bundle/blob/master/register-service-provider.sh).
   - Make sure that you have configured a keystore file (`$KEYSTORE_FILE` in `.env`). If not, the script will exit with an error and you cannot register as a service provider.
   - Make sure that the configured account has enough funding to register as a service provider. 
-    You can check the [registry contract](https://goerli.etherscan.io/address/0x735722704e365c37247bb3e4ec52d6c937c54539#readContract) (Currently deployed on goerli) for the current price of a slot. 
-    You will find the price under `3. currentPrice` denominated in SVT. 
+    You can check the [registry contract](https://goerli.etherscan.io/address/0x0fedBC2ef6C33030BE69208c22Bc107aF37A8AfC#readContract) for the current price of a slot. 
+    You will find the price under `3. currentPrice` denominated in RDN. 
     The script will also inform you about price as well.
 
 
