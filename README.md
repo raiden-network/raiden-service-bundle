@@ -145,7 +145,7 @@ host an application that relies on either Cookies or LocalStorage for security r
 
 ### Installing the RSB
 
-1. Clone the [current release version of this repository](https://github.com/raiden-network/raiden-service-bundle/tree/2020.03.0)
+1. Clone the [current release version of this repository](https://github.com/raiden-network/raiden-service-bundle/tree/2020.04.0)
    to a suitable location on the server:
 
    ```shell
