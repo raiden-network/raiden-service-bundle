@@ -174,9 +174,9 @@ See [verifying that the RSB is working](#verifying-that-the-rsb-is-working) belo
 ### Configuring the `.env` file
 After cloning the repository the `.env` file needs to be configured. A template named `.env.template` is provided. Below you find a detailed list of the parameters to be set and their explanations.
 
-- `SERVER_NAME`: The host domain without protocol prefix `http://`or `https://` respectively
+- `SERVER_NAME`: The host domain without protocol prefix `https://` respectively
 - `LETSENCRYPT_EMAIL`: Email addres to use when requesting LetsEncrypt certificates
-- `CIDR_ALLOW_METRICS`: Metrics whitelist
+- `CIDR_ALLOW_METRICS`: Metrics whitelist. IP address/network whitelists for access to non-public parts of the service. Uses CIDR notation. Separate multiple entries with commas. Example values: 10.0.0.0/16,10.1.2.3/32 or 10.1.2.3/32.
 - `CIDR_ALLOW_PROXY`: Proxy metrics / management interface whitelist
 - `WORKER_COUNT`: Number of worker processes to start, setting this to the number of CPUs is a good starting point
 - `DATA_DIR`: Data dir location. Optional, defaults to ./data in the checkout directory.
