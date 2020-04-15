@@ -5,7 +5,7 @@
 This repository contains the documentation and configuration necessary to run a
 Raiden Service Bundle.
 
-**Current release:** [2020.03.0](https://github.com/raiden-network/raiden-service-bundle/tree/2020.03.0)
+**Current release:** [2020.04.0](https://github.com/raiden-network/raiden-service-bundle/tree/2020.04.0)
 
 ## Table of Contents
 
