@@ -5,7 +5,7 @@
 This repository contains the documentation and configuration necessary to run a
 Raiden Service Bundle.
 
-**Current release:** [2020.03.0rc2](https://github.com/raiden-network/raiden-service-bundle/tree/2020.03.0rc2)
+**Current release:** [2020.03.0](https://github.com/raiden-network/raiden-service-bundle/tree/2020.03.0)
 
 ## Table of Contents
 
@@ -92,9 +92,9 @@ After a successful deployment the following ports will be in use:
   - Redirects to HTTPS
   - Let's Encrypt HTTP challenge for certificate provisioning
 - 443 - HTTPS
-  - Synapse web and API client access
+  - Synapse web and API client access (on subdomain `transport.$<SERVER_NAME>`)
   - Synapse Server-to-Server federation
-  - Raiden Pathfinding Server (on subdomain `pfs.$SERVER_NAME`)
+  - Raiden Pathfinding Server (on subdomain `pfs.$<SERVER_NAME>`)
   - Metrics export (IP restricted, see below)
 
 ## Requirements
@@ -144,13 +144,13 @@ host an application that relies on either Cookies or LocalStorage for security r
 
 ### Installing the RSB
 
-1. Clone the [current release version of this repository](https://github.com/raiden-network/raiden-service-bundle/tree/2020.03.0rc2)
+1. Clone the [current release version of this repository](https://github.com/raiden-network/raiden-service-bundle/tree/2020.03.0)
    to a suitable location on the server:
 
    ```shell
-   git clone -b 2020.03.0rc2 https://github.com/raiden-network/raiden-service-bundle.git
+   git clone -b 2020.03.0 https://github.com/raiden-network/raiden-service-bundle.git
    ```
-1. Copy `.env.template` to `.env` and modify the values to fit your setup (see inline comments for details)
+1. Copy `.env.template` to `.env` and modify the values to fit your setup. Please read [Configuring the `.env` file](#configuring-the-env-file) for detailed information.
    - We would appreciate it if you allow us access to the monitoring interfaces
      (to do that uncomment the default values of the `CIDR_ALLOW_METRICS` and `CIDR_ALLOW_PROXY` settings).
    - We also recommend that you provide your own monitoring. The setup of which is currently out of scope of this document.
@@ -169,6 +169,27 @@ various error messages. This is expected behaviour and will resolve itself.
 
 After the 24h have elapsed all services should run successfully.
 See [verifying that the RSB is working](#verifying-that-the-rsb-is-working) below.
+
+### Configuring the `.env` file
+After cloning the repository the `.env` file needs to be configured. A template named `.env.template` is provided. Below you find a detailed list of the parameters to be set and their explanations.
+
+- `SERVER_NAME`: The host domain without protocol prefix `http://`or `https://` respectively
+- `LETSENCRYPT_EMAIL`: Email addres to use when requesting LetsEncrypt certificates
+- `CIDR_ALLOW_METRICS`: Metrics whitelist
+- `CIDR_ALLOW_PROXY`: Proxy metrics / management interface whitelist
+- `WORKER_COUNT`: Number of worker processes to start, setting this to the number of CPUs is a good starting point
+- `DATA_DIR`: Data dir location. Optional, defaults to ./data in the checkout directory.
+- `URL_KNOWN_FEDERATION_SERVERS`: URL to use to fetch federation whitelist - used only for testing
+- `KEYSTORE_FILE`: The keystore file which has to be located in ${DATA_DIR}/keystore
+- `PASSWORD`: Password to decrypt the keystore file
+- `ETH_RPC`: Ethereum RPC URL
+- `PFS_ACCEPT_DISCLAIMER`: TRUE or FALSE if you accept the Pathfinding Service disclaimer or not. Read the Disclaimer [here](https://github.com/raiden-network/raiden-services/blob/f4bcb9c289e093754204fe18684e4b57558ea29b/src/pathfinding_service/constants.py#L34)
+- `MS_ACCEPT_DISCLAIMER`: TRUE or FALSE if you accept the Monitoring Service disclaimer or not. Read the Disclaimer [here](https://github.com/raiden-network/raiden-services/blob/f4bcb9c289e093754204fe18684e4b57558ea29b/src/monitoring_service/constants.py#L22)
+- `CHAIN_ID`: Chain ID of the connected Ethereum node.
+- `PFS_SERVICE_FEE`: The Pathfinding Service Fee to be paid for requests
+- `PFS_OPERATOR`: Official Operator Name
+- `PFS_INFO_MESSAGE`: Info message. Will be displayed on info endpoint.
+- `LOG_LEVEL`: 'INFO' or 'DEBUG' recommended
 
 
 ### Registering as an RSB Provider
@@ -198,7 +219,6 @@ See [troubleshooting the RSB installation](#troubleshooting-the-rsb-installation
 - Matrix
   - Check that the following endpoints return a successful response (HTTP status 200): 
     - `https://transport.<SERVER_NAME>/_matrix/client/versions`
-    - `https://transport.<SERVER_NAME>/_matrix/client/api/v1/publicRooms`
 
 - PFS
   - Check that the `latest_committed_block` is increasing regularly:
@@ -206,7 +226,6 @@ See [troubleshooting the RSB installation](#troubleshooting-the-rsb-installation
     `docker-compose logs --tail 100 pfs | grep latest_committed_block`
   - Check that the following endpoint returns a successful response (HTTP status 200):
     - `https://pfs.<SERVER_NAME>/api/v1/info`
-
 
 - MS
   - Check that the `latest_confirmed_block` is increasing regularly:
@@ -216,7 +235,8 @@ See [troubleshooting the RSB installation](#troubleshooting-the-rsb-installation
 
 ### Troubleshooting the RSB installation
 
-TBD
+If you experience any unexpected behavior while installing the RSB, please do not hesitate to contact the development team. The fastet way to reach out to us is via the plublic [Raiden Gitter channel](https://gitter.im/raiden-network/raiden).
+Otherwise, you can also open an issue in this repository with the predefined template for a [bug report](https://github.com/raiden-network/raiden-service-bundle/issues/new?template=bug_report.md)
 
 
 ## Upgrades
