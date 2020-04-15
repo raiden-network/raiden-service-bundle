@@ -92,8 +92,9 @@ After a successful deployment the following ports will be in use:
   - Redirects to HTTPS
   - Let's Encrypt HTTP challenge for certificate provisioning
 - 443 - HTTPS
-  - Synapse web and API client access (on subdomain `transport.$<SERVER_NAME>`)
-  - Synapse Server-to-Server federation
+  - Synapse (on subdomain `transport.$<SERVER_NAME>`)
+    - Client API access
+    - Server-to-Server federation
   - Raiden Pathfinding Server (on subdomain `pfs.$<SERVER_NAME>`)
   - Metrics export (IP restricted, see below)
 
