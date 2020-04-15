@@ -221,8 +221,10 @@ TBD
 
 ## Upgrades
 
-To upgrade to a new release please check the [changelog](#changelog) for any
-necessary configuration changes and then run the following commands:
+To upgrade to a new release please refer to the [`upgrading document`](./UPGRADING.md) for any
+necessary configuration changes.
+ 
+Afterwards run the following commands:
 
 ```shell
 git fetch origin --tags
@@ -261,6 +263,7 @@ or contact us via email at contact@raiden.nework.
 
 ## Changelog
 See [`CHANGELOG.md`](./CHANGELOG.md).
+
 
 ## Licenses
 

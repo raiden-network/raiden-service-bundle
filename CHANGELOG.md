@@ -3,7 +3,7 @@
   - Documentation has been significantly expanded 
   - The Synapse containers are now located on the subdomain `transport.<SERVER_NAME>`
   - Upgrade Traefik to v2.2
-  - Upgrade Synapse to v1.10.0
+  - Upgrade Synapse to v1.10.1
   - Pin the version numbers of required docker / PyPI packages 
   - Replace room history purging with Synapse retention policies
   - Add a utility to remove inactive users from global rooms
