@@ -1,16 +1,15 @@
 ## Changelog
-- 2020-04-09 - `2020.03.0rc2` - **Upgrade release** (Release candidate 2)
-  - matrix servers are reachable with subdomain `transport.<SERVER_NAME>`
-  - known servers is ordered as in the list
-  - Readme refinement
-  - MSRC and MS containers have no dependency
-  - Optimize functionality when new provider is added to the list
-- 2020-03-27 - `2020.03.0rc1` - **Upgrade release** (Release candidate 1)
+- 2020-04-xx - `2020.04.0` - **Upgrade release**
+  - Documentation has been significantly expanded 
+  - The Synapse containers are now located on the subdomain `transport.<SERVER_NAME>`
+  - Upgrade Traefik to v2.2
+  - Upgrade Synapse to v1.10.1
   - Pin the version numbers of required docker / PyPI packages 
-- 2020-03-26 - `2020.03.0rc0` - **Upgrade release** (Release candidate 0)
-  - Upgrade Synapse to v1.10.0
   - Replace room history purging with Synapse retention policies
   - Add a utility to remove inactive users from global rooms
+  - Server side broadcast room creation uses the list of known servers as-is. 
+    Thereby making the list order stable when new providers are added.
+  - Per-Synapse-server admin users are now automatically created    
   - Various other improvements
 - 2019-11-20 - `2019.11.1` - **Upgrade release**
   - This release fixes some issues with the release process of the previous version `2019.11.0`.
