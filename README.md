@@ -149,7 +149,7 @@ host an application that relies on either Cookies or LocalStorage for security r
    to a suitable location on the server:
 
    ```shell
-   git clone -b 2020.03.0 https://github.com/raiden-network/raiden-service-bundle.git
+   git clone -b 2020.04.0 https://github.com/raiden-network/raiden-service-bundle.git
    ```
 1. Copy `.env.template` to `.env` and modify the values to fit your setup. Please read [Configuring the `.env` file](#configuring-the-env-file) for detailed information.
    - We would appreciate it if you allow us access to the monitoring interfaces
