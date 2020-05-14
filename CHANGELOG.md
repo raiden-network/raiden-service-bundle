@@ -1,15 +1,17 @@
 ## Changelog
-- 2020-04-xx - `2020.04.0` - **Upgrade release**
-  - Documentation has been significantly expanded 
+- 2020-05-14 - `2020.05.0rc1` - **Maintenance release**
+  - Update Raiden Services to 0.9.0
+- 2020-04-15 - `2020.04.0` - **Upgrade release**
+  - Documentation has been significantly expanded
   - The Synapse containers are now located on the subdomain `transport.<SERVER_NAME>`
   - Upgrade Traefik to v2.2
   - Upgrade Synapse to v1.10.1
-  - Pin the version numbers of required docker / PyPI packages 
+  - Pin the version numbers of required docker / PyPI packages
   - Replace room history purging with Synapse retention policies
   - Add a utility to remove inactive users from global rooms
-  - Server side broadcast room creation uses the list of known servers as-is. 
+  - Server side broadcast room creation uses the list of known servers as-is.
     Thereby making the list order stable when new providers are added.
-  - Per-Synapse-server admin users are now automatically created    
+  - Per-Synapse-server admin users are now automatically created
   - Various other improvements
 - 2019-11-20 - `2019.11.1` - **Upgrade release**
   - This release fixes some issues with the release process of the previous version `2019.11.0`.
