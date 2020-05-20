@@ -1,4 +1,7 @@
 ## Changelog
+- 2020-05-20 - `2020.05.0` - **Maintenance release**
+  - Update Raiden to 0.200.0rc9
+  - Update Raiden Services to 0.10.0
 - 2020-05-14 - `2020.05.0rc1` - **Maintenance release**
   - Update Raiden Services to 0.9.0
 - 2020-04-15 - `2020.04.0` - **Upgrade release**
