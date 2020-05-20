@@ -26,4 +26,4 @@ data
 !build
 
 .mypy_cache
-
+venv/
