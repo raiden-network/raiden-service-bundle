@@ -1,2 +1,3 @@
 ## This file will be read by the Raiden client to discover the known Matrix servers when connecting to main networks
   - transport.mainnet.raiden.anyblock.tools
+  - transport.raiden.dappnode.io
