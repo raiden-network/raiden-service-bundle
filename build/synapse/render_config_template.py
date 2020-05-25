@@ -3,6 +3,7 @@ import os
 import random
 import string
 from pathlib import Path
+from typing import Optional
 from urllib.error import URLError
 from urllib.request import urlopen
 
@@ -13,10 +14,8 @@ PATH_ADMIN_USER_CREDENTIALS = Path("/config/admin_user_cred.json")
 PATH_KNOWN_FEDERATION_SERVERS = Path("/data/known_federation_servers.yaml")
 PATH_WELL_KNOWN_FILE = Path("/data_well_known/server")
 
-URL_KNOWN_FEDERATION_SERVERS_DEFAULT = (
-    "https://raw.githubusercontent.com/"
-    "raiden-network/raiden-transport/master/known_servers.yaml"
-)
+# This file gets created during docker build from the given Raiden version
+PATH_KNOWN_FEDERATION_SERVERS_DEFAULT_URL = Path("/known_servers.default.txt")
 
 
 def get_macaroon_key() -> str:
@@ -29,10 +28,10 @@ def get_macaroon_key() -> str:
     return macaroon
 
 
-def get_known_federation_servers(url_known_federation_servers: str) -> str:
+def get_known_federation_servers(url_known_federation_servers: Optional[str]) -> str:
     if not url_known_federation_servers:
-        # In case the env variable is set but empty
-        url_known_federation_servers = URL_KNOWN_FEDERATION_SERVERS_DEFAULT
+        # Env variable not set or empty, use default
+        url_known_federation_servers = PATH_KNOWN_FEDERATION_SERVERS_DEFAULT_URL.read_text()
     print("Fetching known federation servers from:", url_known_federation_servers)
     try:
         resp = urlopen(url_known_federation_servers)
@@ -47,7 +46,7 @@ def get_known_federation_servers(url_known_federation_servers: str) -> str:
     return ""
 
 
-def render_synapse_config(server_name: str, url_known_federation_servers: str) -> None:
+def render_synapse_config(server_name: str, url_known_federation_servers: Optional[str]) -> None:
     template_content = PATH_CONFIG_TEMPLATE.read_text()
     rendered_config = string.Template(template_content).substitute(
         MACAROON_KEY=get_macaroon_key(),
@@ -62,7 +61,7 @@ def render_well_known_file(server_name: str) -> None:
     PATH_WELL_KNOWN_FILE.write_text(json.dumps(content, indent=2))
 
 
-def generate_admin_user_credentials():
+def generate_admin_user_credentials() -> None:
     """
     Generate the username "admin-{server-name}" and a random password combination
     that will be used by various tools in the
@@ -78,9 +77,7 @@ def generate_admin_user_credentials():
 
 
 def main() -> None:
-    url_known_federation_servers = os.environ.get(
-        "URL_KNOWN_FEDERATION_SERVERS", URL_KNOWN_FEDERATION_SERVERS_DEFAULT
-    )
+    url_known_federation_servers = os.environ.get("URL_KNOWN_FEDERATION_SERVERS")
     server_name = os.environ["SERVER_NAME"]
 
     render_synapse_config(
