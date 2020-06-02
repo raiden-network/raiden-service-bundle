@@ -1,6 +1,0 @@
-## This file will be read by the Raiden client to discover the known Matrix servers when connecting to test networks
-  - goerli.raiden.anyblock.tools
-  - transport.t01.testtransport.raiden.network
-  - transport.t02.testtransport.raiden.network
-  - raidentransport.ki-decentralized.com
-  - transport.raiden.dappnode.io
