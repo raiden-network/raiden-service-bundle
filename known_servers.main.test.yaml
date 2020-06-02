@@ -1,3 +1,0 @@
-## This file will be read by the Raiden client to discover the known Matrix servers when connecting to main networks
-  - transport.rsb01.test.raiden.network
-  - transport.rsb02.test.raiden.network
