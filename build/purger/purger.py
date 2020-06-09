@@ -3,31 +3,37 @@ import sys
 import time
 from dataclasses import dataclass
 from json import JSONDecodeError
-from operator import itemgetter
 from pathlib import Path
-from typing import Any, Dict, List, TextIO
+from typing import Any, Dict, List, Optional, TextIO, cast
 from urllib.parse import urlparse
 
 import click
+import docker
 import requests
 import yaml
 from matrix_client.errors import MatrixError
-from raiden_contracts.utils.type_aliases import ChainID
+from typing_extensions import TypedDict
 
-import docker
-from raiden.constants import (DISCOVERY_DEFAULT_ROOM,
-                              MONITORING_BROADCASTING_ROOM,
-                              PATH_FINDING_BROADCASTING_ROOM, Networks)
+from raiden.constants import (
+    DISCOVERY_DEFAULT_ROOM,
+    MONITORING_BROADCASTING_ROOM,
+    PATH_FINDING_BROADCASTING_ROOM,
+    Environment,
+    Networks,
+)
 from raiden.network.transport.matrix import make_room_alias
 from raiden.network.transport.matrix.client import GMatrixHttpApi
-
-URL_KNOWN_FEDERATION_SERVERS_DEFAULT = (
-    "https://raw.githubusercontent.com/raiden-network/raiden-transport/master/known_servers.yaml"
-)
+from raiden.settings import DEFAULT_MATRIX_KNOWN_SERVERS
+from raiden_contracts.utils.type_aliases import ChainID
 
 SYNAPSE_CONFIG_PATH = "/config/synapse.yaml"
 USER_PURGING_THRESHOLD = 2 * 24 * 60 * 60  # 2 days
 USER_ACTIVITY_PATH = Path("/config/user_activity.json")
+
+
+class UserActivityInfo(TypedDict):
+    last_update: int
+    network_to_users: Dict[str, Dict[str, Any]]
 
 
 @dataclass(frozen=True)
@@ -37,18 +43,29 @@ class RoomInfo:
     server_name: str
 
     @property
-    def local_room_alias(self):
+    def local_room_alias(self) -> str:
         return f"#{self.alias}:{self.server_name}"
 
 
 @click.command()
-@click.argument("server", envvar="MATRIX_SERVER")
+@click.argument("server")
 @click.option("-c", "--credentials-file", required=True, type=click.File("rt"))
 @click.option(
     "--docker-restart-label",
-    help="If set, search all containers with given label and, if they're running, restart them",
+    help="If set, search all containers with given label and, if they're running, "
+    "restart them if the federation whilelist has changed.",
 )
-def purge(server: str, credentials_file: TextIO, docker_restart_label: str) -> None:
+@click.option(
+    "--url-known-federation-servers",
+    envvar="URL_KNOWN_FEDERATION_SERVERS",
+    default=DEFAULT_MATRIX_KNOWN_SERVERS[Environment.PRODUCTION],
+)
+def purge(
+    server: str,
+    credentials_file: TextIO,
+    docker_restart_label: Optional[str],
+    url_known_federation_servers: str,
+) -> None:
     """ Purge inactive users from broadcast rooms
 
     SERVER: matrix synapse server url, e.g.: http://hostname
@@ -72,7 +89,7 @@ def purge(server: str, credentials_file: TextIO, docker_restart_label: str) -> N
         sys.exit(1)
 
     try:
-        global_user_activity = {
+        global_user_activity: UserActivityInfo = {
             "last_update": int(time.time()) - USER_PURGING_THRESHOLD - 1,
             "network_to_users": {},
         }
@@ -98,10 +115,16 @@ def purge(server: str, credentials_file: TextIO, docker_restart_label: str) -> N
         )
 
         # write the updated user activity to file
-        USER_ACTIVITY_PATH.write_text(json.dumps(new_global_user_activity))
+        USER_ACTIVITY_PATH.write_text(json.dumps(cast(Dict[str, Any], new_global_user_activity)))
     finally:
         if docker_restart_label:
-            client = docker.from_env()  # type: ignore
+            if not url_known_federation_servers:
+                # In case an empty env var is set
+                url_known_federation_servers = DEFAULT_MATRIX_KNOWN_SERVERS[Environment.PRODUCTION]
+            # fetch remote whiltelist
+            remote_whitelist = yaml.safe_load(requests.get(url_known_federation_servers).text)
+
+            client = docker.from_env()  # pylint: disable=no-member
             for container in client.containers.list():
                 if container.attrs["State"]["Status"] != "running" or not container.attrs[
                     "Config"
@@ -109,21 +132,8 @@ def purge(server: str, credentials_file: TextIO, docker_restart_label: str) -> N
                     continue
 
                 try:
-                    # parse container's env vars
-                    env_vars: Dict[str, Any] = dict(
-                        itemgetter(0, 2)(e.partition("="))
-                        for e in container.attrs["Config"]["Env"]
-                    )
-                    remote_config_file = (
-                        env_vars.get("URL_KNOWN_FEDERATION_SERVERS")
-                        or URL_KNOWN_FEDERATION_SERVERS_DEFAULT
-                    )
-
-                    # fetch remote file
-                    remote_whitelist = yaml.load(requests.get(remote_config_file).text)
-
                     # fetch local list from container's synapse config
-                    local_whitelist = yaml.load(
+                    local_whitelist = yaml.safe_load(
                         container.exec_run(["cat", SYNAPSE_CONFIG_PATH]).output
                     )["federation_domain_whitelist"]
 
@@ -149,9 +159,9 @@ def purge(server: str, credentials_file: TextIO, docker_restart_label: str) -> N
 
 def run_user_purger(
     api: GMatrixHttpApi,
-    global_user_activity: Dict[str, Any],
+    global_user_activity: UserActivityInfo,
     network_to_broadcast_rooms: Dict[str, List[RoomInfo]],
-) -> Dict[str, Any]:
+) -> UserActivityInfo:
     """
     The user purger mechanism finds inactive users which have been offline
     longer than the threshold time and will kick them out of the global rooms
@@ -202,7 +212,7 @@ def get_network_to_broadcast_rooms(api: GMatrixHttpApi) -> Dict[str, List[RoomIn
 
 def update_user_activity(
     api: GMatrixHttpApi,
-    global_user_activity: Dict[str, Any],
+    global_user_activity: UserActivityInfo,
     broadcast_rooms: Dict[str, List[RoomInfo]],
 ) -> Dict[str, List[str]]:
     """
@@ -232,10 +242,16 @@ def update_user_activity(
 
     for network_key, user_activity in network_to_users.items():
         if fetch_new_members:
+            network_boradcast_rooms = broadcast_rooms[network_key]
+            if len(network_boradcast_rooms) == 0:
+                click.secho(
+                    f"No broadcast rooms found for network {network_key}, skipping.", fg="yellow"
+                )
+                continue
             _fetch_new_members_for_network(
                 api=api,
                 user_activity=network_to_users[network_key],
-                discovery_room=broadcast_rooms[network_key][0],
+                discovery_room=network_boradcast_rooms[0],
                 current_time=current_time,
             )
 
@@ -307,7 +323,7 @@ def _update_user_activity_for_network(
 
 def purge_inactive_users(
     api: GMatrixHttpApi,
-    global_user_activity: Dict[str, Any],
+    global_user_activity: UserActivityInfo,
     network_to_broadcast_rooms: Dict[str, List[RoomInfo]],
     network_to_due_users: Dict[str, List[str]],
 ) -> None:

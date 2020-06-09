@@ -338,8 +338,9 @@ services:
         condition: service_healthy
     environment:
       - PURGE_SLEEP_UNTIL=05:00:00
+      - URL_KNOWN_FEDERATION_SERVERS
     command:
-      - "http://synapse:8008"
+      - "https://transport.${SERVER_NAME}"
       - "--docker-restart-label"
       - "purge_restart_container"
       - "--credentials-file"
