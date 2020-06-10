@@ -196,16 +196,16 @@ After cloning the repository the `.env` file needs to be configured. A template 
 ### Registering as an RSB Provider
 For your newly deployed Raiden Service Bundle to be used by Raiden nodes it must be registered.
 
-1. **Registering in the Services Registry On-Chain**  
+1. **Registering in the Services Registry On-Chain**
   - In order to register as a service provider you need to run the script [`register-service-provider.sh`](https://github.com/raiden-network/raiden-service-bundle/blob/master/register-service-provider.sh).
   - Make sure that you have configured a keystore file (`$KEYSTORE_FILE` in `.env`). If not, the script will exit with an error and you cannot register as a service provider.
-  - Make sure that the configured account has enough funding to register as a service provider. 
-    You can check the [registry contract](https://goerli.etherscan.io/address/0x0fedBC2ef6C33030BE69208c22Bc107aF37A8AfC#readContract) for the current price of a slot. 
-    You will find the price under `3. currentPrice` denominated in RDN. 
+  - Make sure that the configured account has enough funding to register as a service provider.
+    You can check the [registry contract](https://etherscan.io/address/0x0fedBC2ef6C33030BE69208c22Bc107aF37A8AfC#readContract) for the current price of a slot.
+    You will find the price under `3. currentPrice`. To get the price in RDN divide the value by (10^18).
     The script will also inform you about price as well.
 
 
-2. **Extending `known_servers.main.yaml`**  
+2. **Extending `known_servers.main.yaml`**
   - In order to be whitelisted in the Matrix Federation, the list needs to be extended with your server name.
   - [Create an issue](https://github.com/raiden-network/raiden-service-bundle/issues/new) and submit the
    domain / URL of the newly deployed server for inclusion in the list of known servers. 
