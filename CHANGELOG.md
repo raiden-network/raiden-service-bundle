@@ -1,4 +1,8 @@
 ## Changelog
+- 2020-06-18 - `2020.06.0rc0` - **Maintenance release**
+  - Update Raiden to 1.1.0
+  - Update Raiden Services to 0.11.0
+  - Update metrics IP
 - 2020-05-20 - `2020.05.0` - **Maintenance release**
   - Update Raiden to 0.200.0rc9
   - Update Raiden Services to 0.10.0
