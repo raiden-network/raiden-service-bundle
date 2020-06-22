@@ -5,7 +5,7 @@
 This repository contains the documentation and configuration necessary to run a
 Raiden Service Bundle.
 
-**Current release:** [2020.06.0rc0](https://github.com/raiden-network/raiden-service-bundle/tree/2020.06.0rc0)
+**Current release:** [2020.06.0rc1](https://github.com/raiden-network/raiden-service-bundle/tree/2020.06.0rc1)
 
 ## Table of Contents
 
@@ -137,19 +137,19 @@ Note: The default Postgres configuration assumes 16GiB of system RAM
 
 **NOTE:**
 
-If you intend to use a subdomain it is important to be aware of the security implications. 
-Sudomains share Cookies and Browser LocalStoarage with the apex domain. 
-Therefore we strongly suggest that a subdomain is only used below an apex domain that does *not* 
+If you intend to use a subdomain it is important to be aware of the security implications.
+Sudomains share Cookies and Browser LocalStoarage with the apex domain.
+Therefore we strongly suggest that a subdomain is only used below an apex domain that does *not*
 host an application that relies on either Cookies or LocalStorage for security relevant purposes (e.g. user authentication).
 
 
 ### Installing the RSB
 
-1. Clone the [current release version of this repository](https://github.com/raiden-network/raiden-service-bundle/tree/2020.06.0rc0)
+1. Clone the [current release version of this repository](https://github.com/raiden-network/raiden-service-bundle/tree/2020.06.0rc1)
    to a suitable location on the server:
 
    ```shell
-   git clone -b 2020.06.0rc0 https://github.com/raiden-network/raiden-service-bundle.git
+   git clone -b 2020.06.0rc1 https://github.com/raiden-network/raiden-service-bundle.git
    ```
 1. Copy `.env.template` to `.env` and modify the values to fit your setup. Please read [Configuring the `.env` file](#configuring-the-env-file) for detailed information.
    - We would appreciate it if you allow us access to the monitoring interfaces
@@ -162,11 +162,11 @@ host an application that relies on either Cookies or LocalStorage for security r
 
 **NOTE:**
 
-After a new RSB has been registered and added to the `known_servers.main.yaml` file it can take up 
-to 24 hours for the information to propagate to existing RSB installations.  
+After a new RSB has been registered and added to the `known_servers.main.yaml` file it can take up
+to 24 hours for the information to propagate to existing RSB installations.
 
-During this time some services will not yet be able to start successfully and log 
-various error messages. This is expected behaviour and will resolve itself. 
+During this time some services will not yet be able to start successfully and log
+various error messages. This is expected behaviour and will resolve itself.
 
 After the 24h have elapsed all services should run successfully.
 See [verifying that the RSB is working](#verifying-that-the-rsb-is-working) below.
@@ -208,29 +208,29 @@ For your newly deployed Raiden Service Bundle to be used by Raiden nodes it must
 2. **Extending `known_servers.main.yaml`**
   - In order to be whitelisted in the Matrix Federation, the list needs to be extended with your server name.
   - [Create an issue](https://github.com/raiden-network/raiden-service-bundle/issues/new) and submit the
-   domain / URL of the newly deployed server for inclusion in the list of known servers. 
+   domain / URL of the newly deployed server for inclusion in the list of known servers.
    Please, state your server name as you have set `$SERVER_NAME` in your `.env` file.
 
 ### Verifying that the RSB is working
 
-Check the status of the services by executing `docker-compose ps`. 
-If any services are in a state other than `Up`, `Up (healthy)` or `Exit 0` after the elapse of the 24h waiting period a configuration problem is the most likely cause.  
+Check the status of the services by executing `docker-compose ps`.
+If any services are in a state other than `Up`, `Up (healthy)` or `Exit 0` after the elapse of the 24h waiting period a configuration problem is the most likely cause.
 See [troubleshooting the RSB installation](#troubleshooting-the-rsb-installation) below in that case.
 
 - Matrix
-  - Check that the following endpoints return a successful response (HTTP status 200): 
+  - Check that the following endpoints return a successful response (HTTP status 200):
     - `https://transport.<SERVER_NAME>/_matrix/client/versions`
 
 - PFS
   - Check that the `latest_committed_block` is increasing regularly:
-  
+
     `docker-compose logs --tail 100 pfs | grep latest_committed_block`
   - Check that the following endpoint returns a successful response (HTTP status 200):
     - `https://pfs.<SERVER_NAME>/api/v1/info`
 
 - MS
   - Check that the `latest_confirmed_block` is increasing regularly:
-  
+
     `docker-compose logs --tail 100 ms | grep latest_confirmed_block`
 
 
@@ -244,7 +244,7 @@ Otherwise, you can also open an issue in this repository with the predefined tem
 
 To upgrade to a new release please refer to the [`upgrading document`](./UPGRADING.md) for any
 necessary configuration changes.
- 
+
 Afterwards run the following commands:
 
 ```shell
@@ -257,7 +257,7 @@ docker-compose up -d
 
  - A 'purger' service will run once a day, removing inactive users from global rooms
   to save disk space and processing performance.
-  Additionally if necessary it will restart the ``synapse`` service to fetch an up-to-date 
+  Additionally if necessary it will restart the ``synapse`` service to fetch an up-to-date
   whitelist of servers.
 
 ## Known issues
