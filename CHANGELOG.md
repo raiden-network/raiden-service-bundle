@@ -1,4 +1,6 @@
 ## Changelog
+- 2020-06-23 - `2020.06.0` - **Maintenance release**
+  - Add upgrade instructions
 - 2020-06-22 - `2020.06.0rc1` - **Maintenance release**
   - Fix a bug in the purger code
 - 2020-06-18 - `2020.06.0rc0` - **Maintenance release**
