@@ -1,2 +1,2 @@
 ## This file will be read by the Raiden client to discover the known Matrix servers when connecting to main networks
-  - raiddittransport.env.raiden.network
+  - transport.raiddittransport.env.raiden.network
