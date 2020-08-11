@@ -328,7 +328,7 @@ class RoomEnsurer:
             gevent.spawn(self._connect, server_name, server_url)
             for server_name, server_url in self._known_servers.items()
         }
-        gevent.joinall(jobs, raise_error=True)
+        gevent.joinall(jobs)
         log.info("All servers connected")
         return {server_name: matrix_api for server_name, matrix_api in (job.get() for job in jobs)}
 
