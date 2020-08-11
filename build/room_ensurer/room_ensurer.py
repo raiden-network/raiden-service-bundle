@@ -26,8 +26,6 @@ from gevent.monkey import patch_all  # isort:skip
 
 patch_all()  # isort:skip
 
-from raiden.utils.datastructures import merge_dict
-
 import json
 import os
 import sys
@@ -41,8 +39,7 @@ from urllib.parse import urlparse
 import click
 import gevent
 from eth_utils import encode_hex, to_normalized_address
-from matrix_client.errors import MatrixError
-from raiden_contracts.utils.type_aliases import ChainID
+from matrix_client.errors import MatrixError, MatrixHttpLibError, MatrixRequestError
 from structlog import get_logger
 
 from raiden.constants import (
@@ -58,7 +55,8 @@ from raiden.network.transport.matrix.client import GMatrixHttpApi
 from raiden.settings import DEFAULT_MATRIX_KNOWN_SERVERS
 from raiden.tests.utils.factories import make_signer
 from raiden.utils.cli import get_matrix_servers
-
+from raiden.utils.datastructures import merge_dict
+from raiden_contracts.utils.type_aliases import ChainID
 
 ENV_KEY_KNOWN_SERVERS = "URL_KNOWN_FEDERATION_SERVERS"
 
@@ -328,10 +326,13 @@ class RoomEnsurer:
             for server_name, server_url in self._known_servers.items()
         }
         gevent.joinall(jobs)
-        log.info("All servers connected")
-        return {server_name: matrix_api for server_name, matrix_api in (job.get() for job in jobs)}
 
-    def _connect(self, server_name: str, server_url: str) -> Tuple[str, GMatrixHttpApi]:
+        return {
+            server_name: matrix_api
+            for server_name, matrix_api in (job.get() for job in jobs if job.get())
+        }
+
+    def _connect(self, server_name: str, server_url: str) -> Optional[Tuple[str, GMatrixHttpApi]]:
         log.debug("Connecting", server=server_name)
         api = GMatrixHttpApi(server_url)
         username = self._username
@@ -342,8 +343,16 @@ class RoomEnsurer:
             username = str(to_normalized_address(signer.address))
             password = encode_hex(signer.sign(server_name.encode()))
 
-        response = api.login("m.login.password", user=username, password=password)
-        api.token = response["access_token"]
+        try:
+            response = api.login("m.login.password", user=username, password=password)
+            api.token = response["access_token"]
+        except MatrixHttpLibError:
+            log.warning("Could not connect to server", server_url=server_url)
+            return None
+        except MatrixRequestError:
+            log.warning("Failed to login to server", server_url=server_url)
+            return None
+
         log.debug("Connected", server=server_name)
         return server_name, api
 
