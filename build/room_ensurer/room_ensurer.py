@@ -39,7 +39,7 @@ from urllib.parse import urlparse
 import click
 import gevent
 from eth_utils import encode_hex, to_normalized_address
-from matrix_client.errors import MatrixError
+from matrix_client.errors import MatrixError, MatrixHttpLibError, MatrixRequestError
 from structlog import get_logger
 
 from raiden.constants import (
@@ -329,10 +329,13 @@ class RoomEnsurer:
             for server_name, server_url in self._known_servers.items()
         }
         gevent.joinall(jobs)
-        log.info("All servers connected")
-        return {server_name: matrix_api for server_name, matrix_api in (job.get() for job in jobs)}
 
-    def _connect(self, server_name: str, server_url: str) -> Tuple[str, GMatrixHttpApi]:
+        return {
+            server_name: matrix_api
+            for server_name, matrix_api in (job.get() for job in jobs if job.get())
+        }
+
+    def _connect(self, server_name: str, server_url: str) -> Optional[Tuple[str, GMatrixHttpApi]]:
         log.debug("Connecting", server=server_name)
         api = GMatrixHttpApi(server_url)
         username = self._username
@@ -343,10 +346,18 @@ class RoomEnsurer:
             username = str(to_normalized_address(signer.address))
             password = encode_hex(signer.sign(server_name.encode()))
 
-        response = api.login(
-            "m.login.password", user=username, password=password, device_id="room_ensurer"
-        )
-        api.token = response["access_token"]
+        try:
+            response = api.login(
+                "m.login.password", user=username, password=password, device_id="room_ensurer"
+            )
+            api.token = response["access_token"]
+        except MatrixHttpLibError:
+            log.warning("Could not connect to server", server_url=server_url)
+            return None
+        except MatrixRequestError:
+            log.warning("Failed to login to server", server_url=server_url)
+            return None
+
         log.debug("Connected", server=server_name)
         return server_name, api
 
