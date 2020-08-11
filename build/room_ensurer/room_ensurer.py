@@ -89,11 +89,11 @@ class RoomInfo:
 
 class RoomEnsurer:
     def __init__(
-            self,
-            username: str,
-            password: str,
-            own_server_name: str,
-            known_servers_url: Optional[str] = None,
+        self,
+        username: str,
+        password: str,
+        own_server_name: str,
+        known_servers_url: Optional[str] = None,
     ):
         self._username = username
         self._password = password
@@ -214,7 +214,7 @@ class RoomEnsurer:
         self._ensure_admin_power_levels(room_infos[self._own_server_name])
 
     def _join_and_alias_room(
-            self, first_server_room_alias: str, own_server_room_alias: str
+        self, first_server_room_alias: str, own_server_room_alias: str
     ) -> None:
         response = self._own_api.join_room(first_server_room_alias)
         own_room_id = response.get("room_id")
@@ -291,12 +291,16 @@ class RoomEnsurer:
             return
 
         if own_user not in current_power_levels["users"]:
-            log.warning(f"{own_user} has not been granted administrative power levels yet. Doing nothing.")
+            log.warning(
+                f"{own_user} has not been granted administrative power levels yet. Doing nothing."
+            )
             return
 
         # the supposed power level dict could be just a subset of the current
         # because providers who left cannot be removed from other admins
-        if set(supposed_power_levels["users"].keys()).issubset(set(current_power_levels["users"].keys())):
+        if set(supposed_power_levels["users"].keys()).issubset(
+            set(current_power_levels["users"].keys())
+        ):
             log.debug(f"Power levels are up to date. Doing nothing.")
             return
 
@@ -323,7 +327,7 @@ class RoomEnsurer:
             gevent.spawn(self._connect, server_name, server_url)
             for server_name, server_url in self._known_servers.items()
         }
-        gevent.joinall(jobs, raise_error=True)
+        gevent.joinall(jobs)
         log.info("All servers connected")
         return {server_name: matrix_api for server_name, matrix_api in (job.get() for job in jobs)}
 
