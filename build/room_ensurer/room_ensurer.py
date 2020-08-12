@@ -152,9 +152,7 @@ class RoomEnsurer:
             log.warning("First server room missing")
             if self._is_first_server:
                 log.info("Creating room", server_name=self._own_server_name)
-                first_server_room_info = self._create_room(
-                    self._own_server_name, room_alias_prefix
-                )
+                first_server_room_info = self._create_room(room_alias_prefix)
                 room_infos[self._first_server_name] = first_server_room_info
             else:
                 raise EnsurerError("First server room missing.")
@@ -226,6 +224,9 @@ class RoomEnsurer:
 
     def _get_room(self, server_name: str, room_alias_prefix: str) -> Optional[RoomInfo]:
         api = self._apis[server_name]
+        if api is None:
+            return None
+
         room_alias_local = f"#{room_alias_prefix}:{server_name}"
         try:
             response = api.join_room(room_alias_local)
@@ -311,8 +312,8 @@ class RoomEnsurer:
         except MatrixError:
             log.debug("Could not set power levels", room_aliases=room_info.aliases)
 
-    def _create_room(self, server_name: str, room_alias_prefix: str) -> RoomInfo:
-        api = self._apis[server_name]
+    def _create_room(self, room_alias_prefix: str) -> RoomInfo:
+        api = self._apis[self._own_server_name]
         server_admin_power_levels = self._create_server_user_power_levels()
         response = api.create_room(
             room_alias_prefix,
@@ -320,8 +321,8 @@ class RoomEnsurer:
             power_level_content_override=server_admin_power_levels,
         )
 
-        room_alias = f"#{room_alias_prefix}:{server_name}"
-        return RoomInfo(response["room_id"], {room_alias}, server_name)
+        room_alias = f"#{room_alias_prefix}:{self._own_server_name}"
+        return RoomInfo(response["room_id"], {room_alias}, self._own_server_name)
 
     def _connect_all(self) -> Dict[str, GMatrixHttpApi]:
         jobs = {
