@@ -131,7 +131,10 @@ class RoomEnsurer:
                 PATH_FINDING_BROADCASTING_ROOM,
             ]:
                 try:
-                    self._ensure_room_for_network(network, alias_fragment)
+                    room_alias_prefix = make_room_alias(ChainID(network.value), alias_fragment)
+                    self._first_server_actions(room_alias_prefix)
+                    log.info(f"Ensuring {alias_fragment} room for {network.name}")
+                    self._ensure_room_for_network(room_alias_prefix)
                 except (MatrixError, EnsurerError) as ex:
                     log.exception(f"Error while ensuring room for {network.name}.")
                     exceptions[network] = ex
@@ -139,25 +142,25 @@ class RoomEnsurer:
             log.error("Exceptions happened", exceptions=exceptions)
             raise MultipleErrors(exceptions)
 
-    def _ensure_room_for_network(self, network: Networks, alias_fragment: str) -> None:
-        log.info(f"Ensuring {alias_fragment} room for {network.name}")
-        room_alias_prefix = make_room_alias(ChainID(network.value), alias_fragment)
-        room_infos: Dict[str, Optional[RoomInfo]] = {
-            server_name: self._get_room(server_name, room_alias_prefix)
-            for server_name in self._known_servers.keys()
-        }
+    def _first_server_actions(self, room_alias_prefix: str) -> None:
+        room_info = self._get_room(self._first_server_name, room_alias_prefix)
 
         # if it is the first server in the list and no room is found, create room
-        if self._is_first_server and room_infos[self._own_server_name] is None:
+        if self._is_first_server and room_info is None:
             log.info("Creating room", server_name=self._own_server_name)
             first_server_room_info = self._create_room(room_alias_prefix)
-            room_infos[self._first_server_name] = first_server_room_info
             log.info(
                 "Room created. Waiting for other servers to join.",
                 room_aliases=first_server_room_info.aliases,
                 room_id=first_server_room_info.room_id,
             )
-            return
+
+    def _ensure_room_for_network(self, room_alias_prefix: str) -> None:
+
+        room_infos: Dict[str, Optional[RoomInfo]] = {
+            server_name: self._get_room(server_name, room_alias_prefix)
+            for server_name in self._known_servers.keys()
+        }
 
         ensure_room_info = None
 
@@ -207,7 +210,6 @@ class RoomEnsurer:
         if not has_unavailable_rooms and are_all_available_rooms_the_same:
             log.info(
                 "Room state ok.",
-                network=network,
                 server_rooms={
                     server_name: room_info.room_id if room_info else None
                     for server_name, room_info in room_infos.items()
