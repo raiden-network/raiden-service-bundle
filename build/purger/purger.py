@@ -267,13 +267,11 @@ def _fetch_new_members_for_network(
     api: GMatrixHttpApi, user_activity: Dict[str, int], discovery_room: RoomInfo, current_time: int
 ) -> None:
     try:
-        response = api.get_room_members(discovery_room.room_id)
+        response = api._send("GET", f"/_synapse/admin/v1/rooms/{discovery_room.room_id}/members")
         room_members = [
-            event["state_key"]
-            for event in response["chunk"]
-            if event["content"]["membership"] == "join"
-            and event["state_key"].split(":")[1] == urlparse(api.base_url).netloc
-            and not event["state_key"].find("admin")
+            member
+            for member in response["members"]
+            if member.split(":")[1] == urlparse(api.base_url).netloc and not member.find("admin")
         ]
 
         # Add new members with an overdue activity time
