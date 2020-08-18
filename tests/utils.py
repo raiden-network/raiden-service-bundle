@@ -29,14 +29,14 @@ class GMatrixHttpApiTest(GMatrixHttpApi):
 
         raise MatrixRequestError()
 
-    def kick_user(self, room_id, user_id):
-        return None
-
     def get_joined_members(self, room_id):
         return self.user_presence
 
-    def get_room_members(self, room_id):
-        return {"chunk": []}
+    # this is a hack because _send is only called upon fetching room members via admin api
+    def _send(
+        self, method, path, content=None, query_params=None, headers=None, api_path="",
+    ):
+        return {"members": []}
 
 
 def create_user_activity_dict(size: int, lower_bound: int, upper_bound: int) -> Dict[str, int]:
