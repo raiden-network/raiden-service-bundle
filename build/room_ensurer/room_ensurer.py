@@ -162,27 +162,27 @@ class RoomEnsurer:
             for server_name in self._known_servers.keys()
         }
 
-        ensure_room_info = None
+        expected_room_info = None
 
         # find first available room info sorted by known_servers list
         # if first server is not available then try to ensure with second, and so on
         for server_name, room_info in room_infos.items():
             log.info(f"trying to ensure with: {server_name}")
-            ensure_room_info = room_info
-            if ensure_room_info:
+            expected_room_info = room_info
+            if expected_room_info:
                 break
 
         # This means own server has not joined yet and no other servers available
-        if ensure_room_info is None:
+        if expected_room_info is None:
             log.warning("No other servers available. Cannot join the rooms. Doing nothing.")
             return
 
         has_unavailable_rooms = all(room_infos.values())
 
         are_all_available_rooms_the_same = all(
-            room_info.room_id == ensure_room_info.room_id
+            room_info.room_id == expected_room_info.room_id
             for room_info in room_infos.values()
-            if room_info is not None and ensure_room_info is not None
+            if room_info is not None and expected_room_info is not None
         )
 
         if has_unavailable_rooms:
@@ -199,7 +199,7 @@ class RoomEnsurer:
             log.warning(
                 "Room id mismatch",
                 alias_prefix=room_alias_prefix,
-                expected=ensure_room_info.room_id,
+                expected=expected_room_info.room_id,
                 found={
                     server_name: room_info.room_id
                     for server_name, room_info in room_infos.items()
@@ -215,9 +215,7 @@ class RoomEnsurer:
                     for server_name, room_info in room_infos.items()
                 },
             )
-            return
 
-        # There are either mis
         own_server_room_info = room_infos.get(self._own_server_name)
         own_server_room_alias = f"#{room_alias_prefix}:{self._own_server_name}"
         first_server_room_alias = f"#{room_alias_prefix}:{self._first_server_name}"
@@ -226,17 +224,17 @@ class RoomEnsurer:
             log.warning(
                 "Room missing on own server, adding alias",
                 server_name=self._own_server_name,
-                room_id=ensure_room_info.room_id,
+                room_id=expected_room_info.room_id,
                 new_room_alias=own_server_room_alias,
             )
             self._join_and_alias_room(first_server_room_alias, own_server_room_alias)
             log.info("Room alias set", alias=own_server_room_alias)
 
-        elif own_server_room_info.room_id != ensure_room_info.room_id:
+        elif own_server_room_info.room_id != expected_room_info.room_id:
             log.warning(
                 "Conflicting local room, reassigning alias",
                 server_name=self._own_server_name,
-                expected_room_id=ensure_room_info.room_id,
+                expected_room_id=expected_room_info.room_id,
                 current_room_id=own_server_room_info.room_id,
             )
             self._own_api.remove_room_alias(own_server_room_alias)
@@ -244,12 +242,13 @@ class RoomEnsurer:
             log.info(
                 "Room alias updated",
                 alias=own_server_room_alias,
-                room_id=ensure_room_info.room_id,
+                room_id=expected_room_info.room_id,
             )
         else:
             log.warning("Mismatching rooms on other servers. Doing nothing.")
 
         # Ensure that all admins have admin power levels
+        # should always ensure if this server admin has joined the expected room
         self._ensure_admin_power_levels(own_server_room_info)
 
     def _join_and_alias_room(
