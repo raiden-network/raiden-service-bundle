@@ -244,8 +244,6 @@ class RoomEnsurer:
                 alias=own_server_room_alias,
                 room_id=expected_room_info.room_id,
             )
-        else:
-            log.warning("Mismatching rooms on other servers. Doing nothing.")
 
         # Ensure that all admins have admin power levels
         # should always ensure if this server admin has joined the expected room
