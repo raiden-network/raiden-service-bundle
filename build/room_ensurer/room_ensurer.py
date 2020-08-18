@@ -33,7 +33,7 @@ from dataclasses import dataclass
 from enum import IntEnum
 from itertools import chain
 from json import JSONDecodeError
-from typing import Any, Dict, Optional, Set, TextIO, Tuple, Union
+from typing import Any, DefaultDict, Dict, Optional, Set, TextIO, Tuple, Union
 from urllib.parse import urlparse
 
 import click
@@ -77,13 +77,6 @@ class EnsurerError(Exception):
 
 class MultipleErrors(EnsurerError):
     pass
-
-
-@dataclass(frozen=True)
-class RoomInfo:
-    room_id: str
-    aliases: Set[str]
-    server_name: str
 
 
 class RoomEnsurer:
@@ -143,46 +136,41 @@ class RoomEnsurer:
             raise MultipleErrors(exceptions)
 
     def _first_server_actions(self, room_alias_prefix: str) -> None:
-        room_info = self._get_room(self._first_server_name, room_alias_prefix)
+        room_id = self._get_room(self._first_server_name, room_alias_prefix)
 
         # if it is the first server in the list and no room is found, create room
-        if self._is_first_server and room_info is None:
+        if self._is_first_server and room_id is None:
             log.info("Creating room", server_name=self._own_server_name)
-            first_server_room_info = self._create_room(room_alias_prefix)
-            log.info(
-                "Room created. Waiting for other servers to join.",
-                room_aliases=first_server_room_info.aliases,
-                room_id=first_server_room_info.room_id,
-            )
+            self._create_room(room_alias_prefix)
 
     def _ensure_room_for_network(self, room_alias_prefix: str) -> None:
 
-        room_infos: Dict[str, Optional[RoomInfo]] = {
+        server_name_to_room_ids: Dict[str, Optional[str]] = {
             server_name: self._get_room(server_name, room_alias_prefix)
             for server_name in self._known_servers.keys()
         }
 
-        expected_room_info = None
+        expected_room_id = None
 
         # find first available room info sorted by known_servers list
         # if first server is not available then try to ensure with second, and so on
-        for server_name, room_info in room_infos.items():
+        for server_name, room_id in server_name_to_room_ids.items():
             log.info(f"trying to ensure with: {server_name}")
-            expected_room_info = room_info
-            if expected_room_info:
+            expected_room_id = room_id
+            if expected_room_id:
                 break
 
         # This means own server has not joined yet and no other servers available
-        if expected_room_info is None:
+        if expected_room_id is None:
             log.warning("No other servers available. Cannot join the rooms. Doing nothing.")
             return
 
-        has_unavailable_rooms = all(room_infos.values())
+        has_unavailable_rooms = all(server_name_to_room_ids.values())
 
         are_all_available_rooms_the_same = all(
-            room_info.room_id == expected_room_info.room_id
-            for room_info in room_infos.values()
-            if room_info is not None and expected_room_info is not None
+            room_id == expected_room_id
+            for room_id in server_name_to_room_ids.values()
+            if room_id is not None and expected_room_id is not None
         )
 
         if has_unavailable_rooms:
@@ -190,8 +178,8 @@ class RoomEnsurer:
                 "Could not connect to all servers or room could not be found. Those cannot be ensured.",
                 offline_servers=[
                     server_name
-                    for server_name, room_info in room_infos.items()
-                    if room_info is None
+                    for server_name, room_id in server_name_to_room_ids.items()
+                    if room_id is None
                 ],
             )
 
@@ -199,55 +187,49 @@ class RoomEnsurer:
             log.warning(
                 "Room id mismatch",
                 alias_prefix=room_alias_prefix,
-                expected=expected_room_info.room_id,
+                expected=expected_room_id,
                 found={
-                    server_name: room_info.room_id
-                    for server_name, room_info in room_infos.items()
-                    if room_info is not None
+                    server_name: room_id
+                    for server_name, room_id in server_name_to_room_ids.items()
+                    if room_id is not None
                 },
             )
 
         if not has_unavailable_rooms and are_all_available_rooms_the_same:
             log.info(
-                "Room state ok.",
-                server_rooms={
-                    server_name: room_info.room_id if room_info else None
-                    for server_name, room_info in room_infos.items()
-                },
+                "Room state ok.", server_rooms=server_name_to_room_ids,
             )
 
-        own_server_room_info = room_infos.get(self._own_server_name)
+        own_server_room_id = server_name_to_room_ids.get(self._own_server_name)
         own_server_room_alias = f"#{room_alias_prefix}:{self._own_server_name}"
         first_server_room_alias = f"#{room_alias_prefix}:{self._first_server_name}"
 
-        if not own_server_room_info:
+        if not own_server_room_id:
             log.warning(
                 "Room missing on own server, adding alias",
                 server_name=self._own_server_name,
-                room_id=expected_room_info.room_id,
+                room_id=expected_room_id,
                 new_room_alias=own_server_room_alias,
             )
             self._join_and_alias_room(first_server_room_alias, own_server_room_alias)
             log.info("Room alias set", alias=own_server_room_alias)
 
-        elif own_server_room_info.room_id != expected_room_info.room_id:
+        elif own_server_room_id != expected_room_id:
             log.warning(
                 "Conflicting local room, reassigning alias",
                 server_name=self._own_server_name,
-                expected_room_id=expected_room_info.room_id,
-                current_room_id=own_server_room_info.room_id,
+                expected_room_id=expected_room_id,
+                current_room_id=own_server_room_id,
             )
             self._own_api.remove_room_alias(own_server_room_alias)
             self._join_and_alias_room(first_server_room_alias, own_server_room_alias)
             log.info(
-                "Room alias updated",
-                alias=own_server_room_alias,
-                room_id=expected_room_info.room_id,
+                "Room alias updated", alias=own_server_room_alias, room_id=expected_room_id,
             )
 
         # Ensure that all admins have admin power levels
         # should always ensure if this server admin has joined the expected room
-        self._ensure_admin_power_levels(own_server_room_info)
+        self._ensure_admin_power_levels(own_server_room_id, own_server_room_alias)
 
     def _join_and_alias_room(
         self, first_server_room_alias: str, own_server_room_alias: str
@@ -259,7 +241,7 @@ class RoomEnsurer:
         log.debug("Joined room on first server", own_room_id=own_room_id)
         self._own_api.set_room_alias(own_room_id, own_server_room_alias)
 
-    def _get_room(self, server_name: str, room_alias_prefix: str) -> Optional[RoomInfo]:
+    def _get_room(self, server_name: str, room_alias_prefix: str) -> Optional[str]:
         api = self._apis[server_name]
         if api is None:
             return None
@@ -286,7 +268,7 @@ class RoomEnsurer:
         log.debug(
             "Room aliases", server_name=server_name, room_id=room_id, aliases=existing_room_aliases
         )
-        return RoomInfo(room_id=room_id, aliases=existing_room_aliases, server_name=server_name)
+        return room_id
 
     def _create_server_user_power_levels(self) -> Dict[str, Any]:
 
@@ -315,21 +297,19 @@ class RoomEnsurer:
 
         return server_admin_power_levels
 
-    def _ensure_admin_power_levels(self, room_info: Optional[RoomInfo]) -> None:
-        if not room_info:
+    def _ensure_admin_power_levels(self, room_id: Optional[str], room_alias: str) -> None:
+        if not room_id:
             return
 
-        log.info(f"Ensuring power levels for {room_info.aliases}")
+        log.info(f"Ensuring power levels for {room_alias}")
         api = self._apis[self._own_server_name]
         own_user = f"@{self._username}:{self._own_server_name}"
         supposed_power_levels = self._create_server_user_power_levels()
 
         try:
-            current_power_levels = api.get_room_state_type(
-                room_info.room_id, "m.room.power_levels", ""
-            )
+            current_power_levels = api.get_room_state_type(room_id, "m.room.power_levels", "")
         except MatrixError:
-            log.debug("Could not fetch power levels", room_aliases=room_info.aliases)
+            log.debug("Could not fetch power levels", room_aliases=room_alias)
             return
 
         if own_user not in current_power_levels["users"]:
@@ -348,11 +328,11 @@ class RoomEnsurer:
 
         merge_dict(current_power_levels, supposed_power_levels)
         try:
-            api.set_power_levels(room_info.room_id, supposed_power_levels)
+            api.set_power_levels(room_id, supposed_power_levels)
         except MatrixError:
-            log.debug("Could not set power levels", room_aliases=room_info.aliases)
+            log.debug("Could not set power levels", room_aliases=room_alias)
 
-    def _create_room(self, room_alias_prefix: str) -> RoomInfo:
+    def _create_room(self, room_alias_prefix: str) -> None:
         api = self._apis[self._own_server_name]
         server_admin_power_levels = self._create_server_user_power_levels()
         response = api.create_room(
@@ -362,7 +342,12 @@ class RoomEnsurer:
         )
 
         room_alias = f"#{room_alias_prefix}:{self._own_server_name}"
-        return RoomInfo(response["room_id"], {room_alias}, self._own_server_name)
+
+        log.info(
+            "Room created. Waiting for other servers to join.",
+            room_alias=room_alias,
+            room_id=response["room_id"],
+        )
 
     def _connect_all(self) -> Dict[str, GMatrixHttpApi]:
         jobs = {
