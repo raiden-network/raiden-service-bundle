@@ -25,11 +25,6 @@ listeners:
     bind_addresses: ['0.0.0.0']
     type: metrics
 
-  # TCP replication
-  - port: 9092
-    bind_address: '0.0.0.0'
-    type: replication
-
   # HTTP replication
   - port: 9093
     bind_address: '0.0.0.0'
@@ -37,6 +32,9 @@ listeners:
     resources:
       - names: [replication]
 
+redis:
+  enabled: true
+  host: redis
 
 event_cache_size: "20K"
 
@@ -48,7 +46,7 @@ log_config: "/config/synapse.log.config"
 # Handled by the federation_sender worker
 send_federation: False
 # Handled by the user_directory worker
-update_user_directory: false
+update_user_directory: False
 
 
 ## Ratelimiting

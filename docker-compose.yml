@@ -14,6 +14,8 @@ x-versions:
     image: raidennetwork/raiden-service-bundle:2020.06.0-room_ensurer
   purger: &IMAGE_PURGER_VERSION
     image: raidennetwork/raiden-service-bundle:2020.06.0-purger
+  redis: &IMAGE_REDIS_VERSION
+    image: redis:6.0
   traefik: &IMAGE_TRAEFIK_VERSION
      image: traefik:2.2
 # /versions
@@ -58,7 +60,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.pfs.rule=Host(`pfs.${SERVER_NAME}`)"
-      - "traefik.http.routers.traefik.entrypoints=websecure"
+      - "traefik.http.routers.pfs.entrypoints=websecure"
       - "traefik.http.routers.pfs.tls=true"
       - "traefik.http.routers.pfs.tls.certresolver=le"
       - "traefik.http.routers.pfs.service=pfs"
@@ -113,9 +115,11 @@ services:
     environment:
       - SERVER_NAME=transport.${SERVER_NAME}
       - URL_KNOWN_FEDERATION_SERVERS
-    command: ["/synapse-venv/bin/python", "-m", "synapse.app.homeserver", "--config-path", "/config/synapse.yaml", "--config-path", "/config/workers/homeserver.yaml"]
+    command: ["synapse"]
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     << : *log-config
     labels:
@@ -135,7 +139,7 @@ services:
       - "traefik.http.middlewares.metrics-access-control.ipwhitelist.sourcerange=${CIDR_ALLOW_METRICS}"
       - "purge_restart_container=true"
 
-  synchrotron:
+  generic_worker:
     << : *IMAGE_SYNAPSE_VERSION
     restart: always
     volumes:
@@ -146,43 +150,17 @@ services:
     depends_on:
       synapse:
         condition: service_healthy
-    entrypoint: ["/synapse-venv/bin/python", "-m", "synapse.app.synchrotron", "--config-path", "/config/synapse.yaml", "--config-path", "/config/workers/synchrotron.yaml"]
-    healthcheck:
-      disable: true
+    command: ["worker", "generic_worker"]
     scale: ${WORKER_COUNT:-4}
     <<: *log-config
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.synchrotron.rule=Host(`transport.${SERVER_NAME}`) && (PathPrefix(`/_matrix/client/{version:(v2_alpha|r0)}/sync`) || PathPrefix(`/_matrix/client/{version:(api/v1|v2_alpha|r0)}/events`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0)}/initialSync`) && PathPrefix(`/_matrix/client/{version:(api/v1|r0)}/rooms/{room:[^/]+}/initialSync`))"
-      - "traefik.http.routers.synchrotron.tls=true"
-      - "traefik.http.routers.synchrotron.tls.certresolver=le"
-      - "traefik.http.routers.synchrotron.service=synchrotron"
-      - "traefik.http.services.synchrotron.loadbalancer.server.port=8008"
-      - "traefik.http.services.synchrotron.loadbalancer.sticky=true"
-
-  federation_reader:
-    << : *IMAGE_SYNAPSE_VERSION
-    restart: always
-    volumes:
-      - ./config/synapse:/config
-      - ${DATA_DIR:-./data}/synapse:/data
-    environment:
-      - SERVER_NAME=transport.${SERVER_NAME}
-    depends_on:
-      synapse:
-        condition: service_healthy
-    entrypoint: ["/synapse-venv/bin/python", "-m", "synapse.app.federation_reader", "--config-path", "/config/synapse.yaml", "--config-path", "/config/workers/federation_reader.yaml"]
-    healthcheck:
-      disable: true
-    << : *log-config
-    labels:
-      - "traefik.enable=true"
-      - "traefik.frontend.rule=Host(`transport.${SERVER_NAME}`) && (PathPrefix(`/_matrix/federation/v1/{type:(backfill|event|event_auth|exchange_third_party_invite|get_missing_events|invite|make_join|make_leave|publicRoom|query|query_auth|send|send_join|send_leave|state|state_ids)}`) || PathPrefix(`/_matrix/federation/v2/{type:(invite|send_join|send_leave)}`) || PathPrefix(`/_matrix/key/v2/query`))"
-      - "traefik.http.routers.federation_reader.tls=true"
-      - "traefik.http.routers.federation_reader.tls.certresolver=le"
-      - "traefik.http.routers.federation_reader.service=federation_reader"
-      - "traefik.http.services.federation_reader.loadbalancer.server.port=8008"
-      - "purge_restart_container=true"
+      - "traefik.http.routers.generic_worker.rule=Host(`transport.${SERVER_NAME}`) && (PathPrefix(`/_matrix/client/versions`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0)}/initialSync`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0)}/rooms/{room:[^/]+}/initialSync`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/account/3pid`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/join/`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/joined_groups`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/keys/changes`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/keys/query`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/login`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/profile/`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/publicised_groups`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/publicRooms`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/rooms/{room:.*}/context/{context:.*}`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/rooms/{room:.*}/joined_members`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/rooms/{room:.*}/members`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/rooms/{room:.*}/send`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/rooms/{room:.*}/state`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/rooms/{room:.*}/{action:(join|invite|leave|ban|unban|kick)}`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/voip/turnServer`) || PathPrefix(`/_matrix/client/{version:(api/v1|v2_alpha|r0)}/events`) || PathPrefix(`/_matrix/client/{version:(v2_alpha|r0)}/sync`) || PathPrefix(`/_matrix/federation/v1/{type:(backfill|event|event_auth|exchange_third_party_invite|get_groups_publicised|get_missing_events|invite|make_join|make_leave|publicRoom|query|query_auth|send|send_join|send_leave|state|state_ids|user/devices)}`) || PathPrefix(`/_matrix/federation/v2/{type:(invite|send_join|send_leave)}`) || PathPrefix(`/_matrix/key/v2/query`))"
+      - "traefik.http.routers.generic_worker.tls=true"
+      - "traefik.http.routers.generic_worker.tls.certresolver=le"
+      - "traefik.http.routers.generic_worker.service=generic_worker"
+      - "traefik.http.services.generic_worker.loadbalancer.server.port=8008"
+      - "traefik.http.services.generic_worker.loadbalancer.sticky=true"
 
   federation_sender:
     << : *IMAGE_SYNAPSE_VERSION
@@ -195,35 +173,12 @@ services:
     depends_on:
       synapse:
         condition: service_healthy
-    entrypoint: ["/synapse-venv/bin/python", "-m", "synapse.app.federation_sender", "--config-path", "/config/synapse.yaml", "--config-path", "/config/workers/federation_sender.yaml"]
+    command: ["worker", "federation_sender"]
     healthcheck:
       disable: true
     << : *log-config
     labels:
       - "purge_restart_container=true"
-
-  client_reader:
-    << : *IMAGE_SYNAPSE_VERSION
-    restart: always
-    volumes:
-      - ./config/synapse:/config
-      - ${DATA_DIR:-./data}/synapse:/data
-    environment:
-      - SERVER_NAME=transport.${SERVER_NAME}
-    depends_on:
-      synapse:
-        condition: service_healthy
-    entrypoint: ["/synapse-venv/bin/python", "-m", "synapse.app.client_reader", "--config-path", "/config/synapse.yaml", "--config-path", "/config/workers/client_reader.yaml"]
-    scale: ${WORKER_COUNT:-4}
-    << : *log-config
-    labels:
-      - "traefik.enable=true"
-      - "traefik.frontend.rule=Host(`transport.${SERVER_NAME}`) && (PathPrefix(`/_matrix/client/versions`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/publicRooms`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/rooms/{room:.*}/joined_members`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/rooms/{room:.*}/context/{context:.*}`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/rooms/{room:.*}/members`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/rooms/{room:.*}/state`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/account/3pid`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/keys/query`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/keys/changes`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/voip/turnServer`))"
-      - "traefik.http.routers.client_reader.tls=true"
-      - "traefik.http.routers.client_reader.tls.certresolver=le"
-      - "traefik.http.routers.client_reader.service=client_reader"
-      - "traefik.http.services.client_reader.loadbalancer.server.port=8008"
-      - "traefik.http.services.client_reader.loadbalancer.sticky=true"
 
   user_dir:
     << : *IMAGE_SYNAPSE_VERSION
@@ -236,45 +191,17 @@ services:
     depends_on:
       synapse:
         condition: service_healthy
-    entrypoint: ["/synapse-venv/bin/python", "-m", "synapse.app.user_dir", "--config-path", "/config/synapse.yaml", "--config-path", "/config/workers/user_dir.yaml"]
-    healthcheck:
-      disable: true
+    command: ["worker", "user_dir"]
     scale: ${WORKER_COUNT:-4}
     << : *log-config
     labels:
       - "traefik.enable=true"
-      - "traefik.frontend.rule=Host(`transport.${SERVER_NAME}`) && PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/user_directory/search`)"
+      - "traefik.http.routers.user_dir.rule=Host(`transport.${SERVER_NAME}`) && PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/user_directory/search`)"
       - "traefik.http.routers.user_dir.tls=true"
       - "traefik.http.routers.user_dir.tls.certresolver=le"
       - "traefik.http.routers.user_dir.service=user_dir"
       - "traefik.http.services.user_dir.loadbalancer.server.port=8008"
       - "traefik.http.services.user_dir.loadbalancer.sticky=true"
-
-  event_creator:
-    << : *IMAGE_SYNAPSE_VERSION
-    restart: always
-    volumes:
-      - ./config/synapse:/config
-      - ${DATA_DIR:-./data}/synapse:/data
-    environment:
-      - SERVER_NAME=transport.${SERVER_NAME}
-    depends_on:
-      synapse:
-        condition: service_healthy
-    entrypoint: ["/synapse-venv/bin/python", "-m", "synapse.app.event_creator", "--config-path", "/config/synapse.yaml", "--config-path", "/config/workers/event_creator.yaml"]
-    healthcheck:
-      disable: true
-    scale: ${WORKER_COUNT:-4}
-    << : *log-config
-    labels:
-      - "traefik.enable=true"
-      - "traefik.frontend.rule=Host(`transport.${SERVER_NAME}`) && (PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/rooms/{room:.*}/send`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/rooms/{room:.*}/{action:(join|invite|leave|ban|unban|kick)}`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/join/`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/profile/`))"
-      - "traefik.http.routers.event_creator.tls=true"
-      - "traefik.http.routers.event_creator.tls.certresolver=le"
-      - "traefik.http.routers.event_creator.service=event_creator"
-      - "traefik.http.services.event_creator.loadbalancer.server.port=8008"
-      - "traefik.http.services.event_creator.loadbalancer.sticky=true"
-
 
   db:
     << : *IMAGE_DB_VERSION
@@ -285,6 +212,13 @@ services:
       POSTGRES_HOST_AUTH_METHOD: "trust"
     healthcheck:
       test: echo 'select 1' | psql -U postgres > /dev/null || exit 1
+    << : *log-config
+
+  redis:
+    << : *IMAGE_REDIS_VERSION
+    restart: always
+    healthcheck:
+      test: redis-cli ping
     << : *log-config
 
   # Serves the .well-known/matrix/server file
