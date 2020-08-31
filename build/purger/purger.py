@@ -125,7 +125,18 @@ def purge(
                 # In case an empty env var is set
                 url_known_federation_servers = DEFAULT_MATRIX_KNOWN_SERVERS[Environment.PRODUCTION]
             # fetch remote whiltelist
-            remote_whitelist = yaml.safe_load(requests.get(url_known_federation_servers).text)
+            try:
+                remote_whitelist = json.loads(requests.get(url_known_federation_servers).text)[
+                    "all_servers"
+                ]
+            except (requests.RequestException, JSONDecodeError, KeyError) as ex:
+                click.secho(
+                    f"Error while fetching whitelist: {ex!r}. "
+                    f"Ignoring, containers will be restarted.",
+                    err=True,
+                )
+                # An empty whitelist will cause the container to be restarted
+                remote_whitelist = []
 
             client = docker.from_env()  # pylint: disable=no-member
             for container in client.containers.list():
@@ -145,16 +156,9 @@ def purge(
                         continue
 
                     click.secho(f"Whitelist changed. Restarting. new_list={remote_whitelist!r}")
-                except (
-                    KeyError,
-                    IndexError,
-                    requests.RequestException,
-                    yaml.scanner.ScannerError,
-                ) as ex:
+                except (KeyError, IndexError) as ex:
                     click.secho(
-                        f"An error ocurred while fetching whitelists: {ex!r}\n"
-                        "Restarting anyway",
-                        err=True,
+                        f"Error fetching container status: {ex!r}. Restarting anyway.", err=True,
                     )
                 # restart container
                 container.restart(timeout=30)

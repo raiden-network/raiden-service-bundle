@@ -26,8 +26,6 @@ from gevent.monkey import patch_all  # isort:skip
 
 patch_all()  # isort:skip
 
-from raiden.utils.datastructures import merge_dict
-
 import json
 import os
 import sys
@@ -42,7 +40,6 @@ import click
 import gevent
 from eth_utils import encode_hex, to_normalized_address
 from matrix_client.errors import MatrixError
-from raiden_contracts.utils.type_aliases import ChainID
 from structlog import get_logger
 
 from raiden.constants import (
@@ -51,6 +48,7 @@ from raiden.constants import (
     PATH_FINDING_BROADCASTING_ROOM,
     Environment,
     Networks,
+    ServerListType,
 )
 from raiden.log_config import configure_logging
 from raiden.network.transport.matrix import make_room_alias
@@ -58,7 +56,8 @@ from raiden.network.transport.matrix.client import GMatrixHttpApi
 from raiden.settings import DEFAULT_MATRIX_KNOWN_SERVERS
 from raiden.tests.utils.factories import make_signer
 from raiden.utils.cli import get_matrix_servers
-
+from raiden.utils.datastructures import merge_dict
+from raiden_contracts.utils.type_aliases import ChainID
 
 ENV_KEY_KNOWN_SERVERS = "URL_KNOWN_FEDERATION_SERVERS"
 
@@ -104,7 +103,9 @@ class RoomEnsurer:
 
         self._known_servers: Dict[str, str] = {
             urlparse(server_url).netloc: server_url
-            for server_url in get_matrix_servers(known_servers_url)
+            for server_url in get_matrix_servers(
+                known_servers_url, server_list_type=ServerListType.ALL_SERVERS
+            )
         }
         if not self._known_servers:
             raise RuntimeError(f"No known servers found from list at {known_servers_url}.")
@@ -214,7 +215,7 @@ class RoomEnsurer:
         self._ensure_admin_power_levels(room_infos[self._own_server_name])
 
     def _join_and_alias_room(
-            self, first_server_room_alias: str, own_server_room_alias: str
+        self, first_server_room_alias: str, own_server_room_alias: str
     ) -> None:
         response = self._own_api.join_room(first_server_room_alias)
         own_room_id = response.get("room_id")
@@ -291,12 +292,16 @@ class RoomEnsurer:
             return
 
         if own_user not in current_power_levels["users"]:
-            log.warning(f"{own_user} has not been granted administrative power levels yet. Doing nothing.")
+            log.warning(
+                f"{own_user} has not been granted administrative power levels yet. Doing nothing."
+            )
             return
 
         # the supposed power level dict could be just a subset of the current
         # because providers who left cannot be removed from other admins
-        if set(supposed_power_levels["users"].keys()).issubset(set(current_power_levels["users"].keys())):
+        if set(supposed_power_levels["users"].keys()).issubset(
+            set(current_power_levels["users"].keys())
+        ):
             log.debug(f"Power levels are up to date. Doing nothing.")
             return
 
