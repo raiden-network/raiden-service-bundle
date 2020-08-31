@@ -338,7 +338,9 @@ class RoomEnsurer:
             username = str(to_normalized_address(signer.address))
             password = encode_hex(signer.sign(server_name.encode()))
 
-        response = api.login("m.login.password", user=username, password=password)
+        response = api.login(
+            "m.login.password", user=username, password=password, device_id="room_ensurer"
+        )
         api.token = response["access_token"]
         log.debug("Connected", server=server_name)
         return server_name, api

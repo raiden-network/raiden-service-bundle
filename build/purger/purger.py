@@ -83,7 +83,9 @@ def purge(
 
     api = GMatrixHttpApi(server)
     try:
-        response = api.login("m.login.password", user=username, password=password)
+        response = api.login(
+            "m.login.password", user=username, password=password, device_id="purger"
+        )
         api.token = response["access_token"]
     except (MatrixError, KeyError) as ex:
         click.secho(f"Could not log in to server {server}: {ex}")
