@@ -14,7 +14,7 @@ from docker import Client
 PATH_CONFIG_SYNAPSE = Path("/config/synapse.yaml")
 PATH_CONFIG_TEMPLATE_SYNAPSE = Path("/config/synapse.template.yaml")
 PATH_CONFIG_WORKER_BASE = Path("/config/workers/")
-PATH_CONFIG_TEMPLATE_WORKER = Path("/config/worker.template.yaml")
+PATH_CONFIG_TEMPLATE_WORKER = PATH_CONFIG_WORKER_BASE.joinpath("worker.template.yaml")
 
 PATH_MACAROON_KEY = Path("/data/keys/macaroon.key")
 PATH_ADMIN_USER_CREDENTIALS = Path("/config/admin_user_cred.json")
@@ -89,7 +89,34 @@ def generate_admin_user_credentials() -> None:
     )
 
 
+def render_worker_config(type_: str) -> Path:
+    # Fetch compose scale index
+    client = Client.from_env()
+    own_container_labels = next(
+        container["Labels"]
+        for container in client.containers()
+        if container["Id"].startswith(os.environ["HOSTNAME"])
+    )
+    own_container_index = (
+        int(own_container_labels.get("com.docker.compose.container-number"), 0) - 1
+    )
+
+    template_content = PATH_CONFIG_TEMPLATE_WORKER.read_text()
+    rendered_content = string.Template(template_content).substitute(
+        WORKER_APP=type_, WORKER_INDEX=own_container_index
+    )
+    target_file = PATH_CONFIG_WORKER_BASE.joinpath(f"{type_}_{own_container_index}.yaml")
+    target_file.write_text(rendered_content)
+    return target_file
+
+
+@click.group()
 def main() -> None:
+    pass
+
+
+@main.command()
+def synapse() -> None:
     url_known_federation_servers = os.environ.get("URL_KNOWN_FEDERATION_SERVERS")
     server_name = os.environ["SERVER_NAME"]
 
@@ -98,6 +125,15 @@ def main() -> None:
     )
     render_well_known_file(server_name=server_name)
     generate_admin_user_credentials()
+
+
+@main.command()
+@click.option(
+    "--type", "type_", type=click.Choice(["generic_worker", "federation_sender", "user_dir"])
+)
+def worker(type_) -> None:
+    target_file = render_worker_config(type_)
+    print(str(target_file))
 
 
 if __name__ == "__main__":

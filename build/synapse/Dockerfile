@@ -13,7 +13,7 @@ ARG SYNAPSE_VERSION
 
 RUN \
     python -m venv /synapse-venv && \
-    /synapse-venv/bin/pip install "matrix-synapse[postgres]==${SYNAPSE_VERSION}"
+    /synapse-venv/bin/pip install "matrix-synapse[postgres,redis]==${SYNAPSE_VERSION}"
 
 RUN /synapse-venv/bin/pip install psycopg2 coincurve pycryptodome twisted>=20.3.0
 
@@ -24,14 +24,12 @@ COPY render_config_template.py /bin/
 COPY --from=RAIDEN /known_servers.default.txt /
 
 ENTRYPOINT ["/bin/synapse-entrypoint.sh"]
-CMD ["/synapse-venv/bin/python", "-m", "synapse.app.homeserver", "--config-path", "/config/synapse.yaml"]
+CMD ["synapse"]
 
 # HTTP
 EXPOSE 8008
 # HTTP metrics
 EXPOSE 9101
-# TCP replication
-EXPOSE 9092
 # HTTP replication
 EXPOSE 9093
 
