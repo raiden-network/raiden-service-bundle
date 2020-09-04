@@ -1,0 +1,15 @@
+pg_table:
+  query: "SELECT current_database() as datname, relname AS table_name, c.reltuples AS row_estimate, pg_total_relation_size(c.oid) AS size_bytes FROM pg_class c LEFT JOIN pg_namespace n ON n.oid = c.relnamespace WHERE relkind = 'r' AND nspname = 'public' ORDER BY table_name;"
+  metrics:
+    - datname:
+        usage: "LABEL"
+        description: "Database name"
+    - table_name:
+        usage: "LABEL"
+        description: "Table name"
+    - row_estimate:
+        usage: "GAUGE"
+        description: "Estimated row count"
+    - size_bytes:
+        usage: "GAUGE"
+        description: "Table size"

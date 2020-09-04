@@ -16,6 +16,8 @@ x-versions:
     image: raidennetwork/raiden-service-bundle:2020.06.0-purger
   redis: &IMAGE_REDIS_VERSION
     image: redis:6.0
+  metrics_db: &IMAGE_METRICS_DB_VERSION
+    image: wrouesnel/postgres_exporter:latest
   traefik: &IMAGE_TRAEFIK_VERSION
      image: traefik:2.2
 # /versions
@@ -217,6 +219,23 @@ services:
     healthcheck:
       test: echo 'select 1' | psql -U postgres > /dev/null || exit 1
     << : *log-config
+
+  metrics_db:
+    << : *IMAGE_METRICS_DB_VERSION
+    volumes:
+      - ./config/metrics_db:/config
+    environment:
+      - DATA_SOURCE_NAME=postgresql://postgres@db/postgres?sslmode=disable
+      - PG_EXPORTER_AUTO_DISCOVER_DATABASES=true
+      - PG_EXPORTER_EXTEND_QUERY_PATH=/config/queries.yaml
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.metrics_db.rule=Host(`metrics.db.${SERVER_NAME}`)"
+      - "traefik.http.routers.metrics_db.tls=true"
+      - "traefik.http.routers.metrics_db.tls.certresolver=le"
+      - "traefik.http.routers.metrics_db.middlewares=metrics_db-access-control@docker"
+      - "traefik.http.routers.metrics_db.service=metrics_db"
+      - "traefik.http.middlewares.metrics_db-access-control.ipwhitelist.sourcerange=${CIDR_ALLOW_METRICS}"
 
   redis:
     << : *IMAGE_REDIS_VERSION
