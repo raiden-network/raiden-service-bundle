@@ -83,25 +83,36 @@ workflows:
       - build_well_known
       - build_room_ensurer
       - build_purger
+
   tagged_images:
     jobs:
       - build_synapse:
           filters:
             tags:
               only: /.+/
+            branches:
+              ignore: /.*/
       - build_db:
           filters:
             tags:
               only: /.+/
+            branches:
+              ignore: /.*/
       - build_well_known:
           filters:
             tags:
               only: /.+/
+            branches:
+              ignore: /.*/
       - build_room_ensurer:
           filters:
             tags:
               only: /.+/
+            branches:
+              ignore: /.*/
       - build_purger:
           filters:
             tags:
               only: /.+/
+            branches:
+              ignore: /.*/
