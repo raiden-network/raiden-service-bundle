@@ -147,6 +147,7 @@ services:
     volumes:
       - ./config/synapse:/config
       - ${DATA_DIR:-./data}/synapse:/data
+      - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - SERVER_NAME=transport.${SERVER_NAME}
     depends_on:
@@ -170,6 +171,7 @@ services:
     volumes:
       - ./config/synapse:/config
       - ${DATA_DIR:-./data}/synapse:/data
+      - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - SERVER_NAME=transport.${SERVER_NAME}
     depends_on:
@@ -188,6 +190,7 @@ services:
     volumes:
       - ./config/synapse:/config
       - ${DATA_DIR:-./data}/synapse:/data
+      - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - SERVER_NAME=transport.${SERVER_NAME}
     depends_on:
