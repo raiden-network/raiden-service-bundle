@@ -29,11 +29,10 @@ patch_all()  # isort:skip
 import json
 import os
 import sys
-from dataclasses import dataclass
 from enum import IntEnum
 from itertools import chain
 from json import JSONDecodeError
-from typing import Any, DefaultDict, Dict, Optional, Set, TextIO, Tuple, Union
+from typing import Any, Dict, Optional, TextIO, Tuple, Union
 from urllib.parse import urlparse
 
 import click
@@ -57,7 +56,7 @@ from raiden.settings import DEFAULT_MATRIX_KNOWN_SERVERS
 from raiden.tests.utils.factories import make_signer
 from raiden.utils.cli import get_matrix_servers
 from raiden.utils.datastructures import merge_dict
-from raiden_contracts.utils.type_aliases import ChainID
+from raiden.utils.typing import ChainID
 
 ENV_KEY_KNOWN_SERVERS = "URL_KNOWN_FEDERATION_SERVERS"
 
@@ -100,13 +99,15 @@ class RoomEnsurer:
                 known_servers_url, server_list_type=ServerListType.ALL_SERVERS
             )
         }
-        if not self._known_servers:
-            raise RuntimeError(f"No known servers found from list at {known_servers_url}.")
+
         self._first_server_name = list(self._known_servers.keys())[0]
         self._is_first_server = own_server_name == self._first_server_name
         self._apis: Dict[str, GMatrixHttpApi] = self._connect_all()
-        self._own_api = self._apis[own_server_name]
 
+        if own_server_name not in self._apis:
+            RuntimeError(f"Could not connect to own matrix server.")
+
+        self._own_api = self._apis[own_server_name]
         log.debug(
             "Room ensurer initialized",
             own_server_name=own_server_name,
@@ -416,8 +417,8 @@ def main(own_server: str, interval: int, credentials_file: TextIO, log_level: st
     while True:
         try:
             room_ensurer = RoomEnsurer(username, password, own_server, known_servers_url)
-        except MatrixError:
-            log.exception("Failure while communicating with matrix servers. Retrying in 60s")
+        except RuntimeError as ex:
+            log.exception(ex)
             gevent.sleep(60)
             continue
 
