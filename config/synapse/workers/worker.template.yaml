@@ -1,8 +1,8 @@
-worker_app: synapse.app.event_creator
+worker_app: synapse.app.${WORKER_APP}
+worker_name: ${WORKER_APP}_${WORKER_INDEX}
 
 # The replication listener on the synapse to talk to.
 worker_replication_host: synapse
-worker_replication_port: 9092
 worker_replication_http_port: 9093
 
 worker_listeners:
@@ -12,4 +12,5 @@ worker_listeners:
     resources:
       - names:
         - client
+        - federation
         compress: false
