@@ -5,15 +5,11 @@ from random import randint
 from typing import Any, Dict
 
 import pytest
-
-from build.purger.purger import (
-    USER_PURGING_THRESHOLD,
-    get_network_to_broadcast_rooms,
-    run_user_purger,
-)
-from raiden.constants import Networks
+from build.purger.purger import USER_PURGING_THRESHOLD, run_user_purger
 from tests.file_templates import USER_PRESENCE_TEMPLATE
 from tests.utils import GMatrixHttpApiTest, create_user_activity_dict
+
+from raiden.constants import Networks
 
 
 @pytest.fixture
@@ -80,11 +76,8 @@ def mocked_matrix_api(
 def test_due_users_get_kicked(
     mocked_matrix_api, global_user_activity, active_users_count, activity_changed_count, networks
 ):
-    network_to_broadcast_rooms = get_network_to_broadcast_rooms(mocked_matrix_api)
 
-    new_global_user_activity = run_user_purger(
-        mocked_matrix_api, global_user_activity, network_to_broadcast_rooms
-    )
+    new_global_user_activity = run_user_purger(mocked_matrix_api, global_user_activity)
     # assert that number of user reduced as expected
     assert (
         len(new_global_user_activity["network_to_users"][str(networks[0].value)])
