@@ -6,30 +6,14 @@
 [entryPoints]
   [entryPoints.web]
     address = ":80"
+    [entryPoints.web.http.redirections]
+      [entryPoints.web.http.redirections.entryPoint]
+        to = "websecure"
   [entryPoints.websecure]
     address = ":443"
 
-[http.routers]
-  [http.routers.http_catchall]
-    entryPoints = ["web"]
-    middlewares = ["https_redirect"]
-    rule = "HostRegexp(`{any:.+}`)"
-    service = "noop"
-
-[http.services]
-  # noop service, the URL will be never called
-  [http.services.noop.loadBalancer]
-    [[http.services.noop.loadBalancer.servers]]
-      url = "http://0.0.0.0:0"
-
-[http.middlewares]
-  [http.middlewares.https_redirect.redirectScheme]
-    scheme = "https"
-    permanent = true
-
 [api]
   dashboard = true
-
 
 [providers.docker]
   watch = true
