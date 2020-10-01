@@ -13,3 +13,15 @@ pg_table:
     - size_bytes:
         usage: "GAUGE"
         description: "Table size"
+synapse_room:
+  query: "SELECT regexp_replace(room_alias, ':.*$', '') AS alias, room_id, 1 AS info  FROM room_aliases WHERE room_alias LIKE '#raiden_%';"
+  metrics:
+    - alias:
+        usage: "LABEL"
+        description: "Local room alias"
+    - room_id:
+        usage: "LABEL"
+        description: "Room ID"
+    - info:
+        usage: "GAUGE"
+        description: "Broadcast room information"
