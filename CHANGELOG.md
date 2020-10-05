@@ -1,4 +1,12 @@
 ## Changelog
+- 2020-10-05 - `2020.10.0` - **Upgrade release**
+  - Upgrade Synapse to `v1.19.1`
+  - Upgrade Raiden Services to `v0.13.0`
+  - Expose additional metrics:
+    - Postgres
+    - Redis
+    - PFS
+    - MS
 - 2020-06-23 - `2020.06.0` - **Maintenance release**
   - Add upgrade instructions
 - 2020-06-22 - `2020.06.0rc1` - **Maintenance release**
