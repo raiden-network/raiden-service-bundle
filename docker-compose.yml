@@ -18,6 +18,8 @@ x-versions:
     image: redis:6.0
   metrics_db: &IMAGE_METRICS_DB_VERSION
     image: wrouesnel/postgres_exporter:latest
+  metrics_redis: &IMAGE_METRICS_REDIS_VERSION
+    image: oliver006/redis_exporter:v1.12.0
   traefik: &IMAGE_TRAEFIK_VERSION
      image: traefik:2.2
 # /versions
@@ -263,6 +265,21 @@ services:
     restart: always
     healthcheck:
       test: redis-cli ping
+    << : *log-config
+
+  metrics_redis:
+    << : *IMAGE_METRICS_REDIS_VERSION
+    command: -redis.addr redis
+    depends_on:
+      redis:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.metrics_redis.rule=Host(`metrics.redis.${SERVER_NAME}`)"
+      - "traefik.http.routers.metrics_redis.tls=true"
+      - "traefik.http.routers.metrics_redis.tls.certresolver=le"
+      - "traefik.http.routers.metrics_redis.middlewares=metrics_redis-access-control@docker"
+      - "traefik.http.middlewares.metrics_redis-access-control.ipwhitelist.sourcerange=${CIDR_ALLOW_METRICS}"
     << : *log-config
 
   # Serves the .well-known/matrix/server file
