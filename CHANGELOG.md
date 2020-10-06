@@ -1,4 +1,7 @@
 ## Changelog
+- 2020-10-06 - `2020.10.1` - **Bugfix release**
+  - Upgrade to Raiden Services `v0.13.1`
+    - This fixes a bug with the services metrics 
 - 2020-10-05 - `2020.10.0` - **Upgrade release**
   - Upgrade Synapse to `v1.19.1`
   - Upgrade Raiden Services to `v0.13.0`

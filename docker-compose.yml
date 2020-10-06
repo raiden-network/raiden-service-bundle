@@ -3,7 +3,7 @@ version: '2.3'
 # versions: change these in order to pin versions for a certain releases
 x-versions:
   services: &IMAGE_RAIDEN_SERVICES_VERSION
-    image: raidennetwork/raiden-services:v0.13.0
+    image: raidennetwork/raiden-services:v0.13.1
   db: &IMAGE_DB_VERSION
     image: raidennetwork/raiden-service-bundle:2020.10.0-db
   synapse: &IMAGE_SYNAPSE_VERSION
@@ -66,15 +66,14 @@ services:
       - "traefik.http.routers.pfs.tls=true"
       - "traefik.http.routers.pfs.tls.certresolver=le"
       - "traefik.http.routers.pfs.middlewares=pfs-restrict-metrics@docker"
-      - "traefik.http.middlewares.pfs-restrict-metrics.stripprefix.prefixes=/api/v1/metrics"
+      - "traefik.http.middlewares.pfs-restrict-metrics.stripprefix.prefixes=/metrics"
       - "traefik.http.routers.pfs.service=pfs"
       - "traefik.http.services.pfs.loadbalancer.healthcheck.path=/api/v1/info"
       - "traefik.http.routers.metrics-pfs.rule=Host(`metrics.pfs.${SERVER_NAME}`)"
       - "traefik.http.routers.metrics-pfs.tls=true"
       - "traefik.http.routers.metrics-pfs.tls.certresolver=le"
-      - "traefik.http.routers.metrics-pfs.middlewares=metrics-pfs-access-control@docker,metrics-pfs-metrics-path@docker"
+      - "traefik.http.routers.metrics-pfs.middlewares=metrics-pfs-access-control@docker"
       - "traefik.http.middlewares.metrics-pfs-access-control.ipwhitelist.sourcerange=${CIDR_ALLOW_METRICS}"
-      - "traefik.http.middlewares.metrics-pfs-metrics-path.addprefix.prefix=/api/v1"
 
   ms:
     << : *services-defaults
@@ -101,14 +100,13 @@ services:
       - "traefik.http.routers.ms.tls.certresolver=le"
       - "traefik.http.routers.ms.middlewares=ms-restrict-metrics@docker"
       - "traefik.http.routers.ms.service=ms"
-      - "traefik.http.middlewares.ms-restrict-metrics.stripprefix.prefixes=/api/v1/metrics"
+      - "traefik.http.middlewares.ms-restrict-metrics.stripprefix.prefixes=/metrics"
       - "traefik.http.services.ms.loadbalancer.healthcheck.path=/api/v1/info"
       - "traefik.http.routers.metrics-ms.rule=Host(`metrics.ms.${SERVER_NAME}`)"
       - "traefik.http.routers.metrics-ms.tls=true"
       - "traefik.http.routers.metrics-ms.tls.certresolver=le"
-      - "traefik.http.routers.metrics-ms.middlewares=metrics-ms-access-control@docker,metrics-ms-metrics-path@docker"
+      - "traefik.http.routers.metrics-ms.middlewares=metrics-ms-access-control@docker"
       - "traefik.http.middlewares.metrics-ms-access-control.ipwhitelist.sourcerange=${CIDR_ALLOW_METRICS}"
-      - "traefik.http.middlewares.metrics-ms-metrics-path.addprefix.prefix=/api/v1"
 
   msrc:
     << : *services-defaults

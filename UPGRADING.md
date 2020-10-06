@@ -1,6 +1,6 @@
 # Upgrading existing installations
 
-## From `2020.06.0` to `2020.10.0`
+## From `2020.06.0`
 
 Due to the significant jump in Synapse version we recommend to wipe the Synapse 
 database when upgrading.
