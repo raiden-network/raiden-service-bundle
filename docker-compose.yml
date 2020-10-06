@@ -5,19 +5,21 @@ x-versions:
   services: &IMAGE_RAIDEN_SERVICES_VERSION
     image: raidennetwork/raiden-services:v0.13.0
   db: &IMAGE_DB_VERSION
-    image: raidennetwork/raiden-service-bundle:2020.10.0rc1-db
+    image: raidennetwork/raiden-service-bundle:2020.10.0-db
   synapse: &IMAGE_SYNAPSE_VERSION
-    image: raidennetwork/raiden-service-bundle:2020.10.0rc1-synapse
+    image: raidennetwork/raiden-service-bundle:2020.10.0-synapse
   well-known-server: &IMAGE_WELL_KNOWN_VERSION
-    image: raidennetwork/raiden-service-bundle:2020.10.0rc1-well_known_server
+    image: raidennetwork/raiden-service-bundle:2020.10.0-well_known_server
   room_ensurer: &IMAGE_ROOM_ENSURER_VERSION
-    image: raidennetwork/raiden-service-bundle:2020.10.0rc1-room_ensurer
+    image: raidennetwork/raiden-service-bundle:2020.10.0-room_ensurer
   purger: &IMAGE_PURGER_VERSION
-    image: raidennetwork/raiden-service-bundle:2020.10.0rc1-purger
+    image: raidennetwork/raiden-service-bundle:2020.10.0-purger
   redis: &IMAGE_REDIS_VERSION
     image: redis:6.0
   metrics_db: &IMAGE_METRICS_DB_VERSION
     image: wrouesnel/postgres_exporter:latest
+  metrics_redis: &IMAGE_METRICS_REDIS_VERSION
+    image: oliver006/redis_exporter:v1.12.0
   traefik: &IMAGE_TRAEFIK_VERSION
      image: traefik:2.2
 # /versions
@@ -263,6 +265,21 @@ services:
     restart: always
     healthcheck:
       test: redis-cli ping
+    << : *log-config
+
+  metrics_redis:
+    << : *IMAGE_METRICS_REDIS_VERSION
+    command: -redis.addr redis
+    depends_on:
+      redis:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.metrics_redis.rule=Host(`metrics.redis.${SERVER_NAME}`)"
+      - "traefik.http.routers.metrics_redis.tls=true"
+      - "traefik.http.routers.metrics_redis.tls.certresolver=le"
+      - "traefik.http.routers.metrics_redis.middlewares=metrics_redis-access-control@docker"
+      - "traefik.http.middlewares.metrics_redis-access-control.ipwhitelist.sourcerange=${CIDR_ALLOW_METRICS}"
     << : *log-config
 
   # Serves the .well-known/matrix/server file
