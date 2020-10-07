@@ -243,7 +243,7 @@ class RoomEnsurer:
         self._own_api.set_room_alias(own_room_id, own_server_room_alias)
 
     def _get_room(self, server_name: str, room_alias_prefix: str) -> Optional[str]:
-        api = self._apis[server_name]
+        api = self._apis.get(server_name)
         if api is None:
             return None
 
@@ -303,7 +303,7 @@ class RoomEnsurer:
             return
 
         log.info(f"Ensuring power levels for {room_alias}")
-        api = self._apis[self._own_server_name]
+        api = self._own_api
         own_user = f"@{self._username}:{self._own_server_name}"
         supposed_power_levels = self._create_server_user_power_levels()
 
@@ -334,7 +334,7 @@ class RoomEnsurer:
             log.debug("Could not set power levels", room_aliases=room_alias)
 
     def _create_room(self, room_alias_prefix: str) -> None:
-        api = self._apis[self._own_server_name]
+        api = self._own_api
         server_admin_power_levels = self._create_server_user_power_levels()
         response = api.create_room(
             room_alias_prefix,
