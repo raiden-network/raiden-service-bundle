@@ -1,4 +1,8 @@
 ## Changelog
+- 2020-10-07 - `2020.10.2` - **Bugfix release**
+  - Fix a few small bugs
+    - Stop Room Ensurer crashing when other servers are unreachable
+    - Fix restart policy of DB & Redis metrics containers 
 - 2020-10-06 - `2020.10.1` - **Bugfix release**
   - Upgrade to Raiden Services `v0.13.1`
     - This fixes a bug with the services metrics 

@@ -241,6 +241,7 @@ services:
 
   metrics_db:
     << : *IMAGE_METRICS_DB_VERSION
+    restart: always
     volumes:
       - ./config/metrics_db:/config
     environment:
@@ -267,6 +268,7 @@ services:
 
   metrics_redis:
     << : *IMAGE_METRICS_REDIS_VERSION
+    restart: always
     command: -redis.addr redis
     depends_on:
       redis:
