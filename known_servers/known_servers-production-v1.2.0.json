@@ -1,13 +1,8 @@
 {
     "active_servers": [
-        "transport.mainnet.raiden.anyblock.tools",
-        "transport.raiden.dappnode.io",
-        "transport.raiden.badgateway.tech"
+        "transport.mainnet.raiden.anyblock.tools"
     ],
     "all_servers": [
-        "transport.mainnet.raiden.anyblock.tools",
-        "transport.raiden.dappnode.io",
-        "transport.raiden.badgateway.tech",
-        "transport.raiden.overdoze.se"
+        "transport.mainnet.raiden.anyblock.tools"
     ]
 }
