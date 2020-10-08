@@ -1,4 +1,6 @@
 ## Changelog
+- 2020-10-08 - `2020.10.3` - **Bugfix release**
+  - Fix an issue with the release process
 - 2020-10-07 - `2020.10.2` - **Bugfix release**
   - Fix a few small bugs
     - Stop Room Ensurer crashing when other servers are unreachable
