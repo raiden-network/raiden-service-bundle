@@ -15,7 +15,7 @@ RUN \
     python -m venv /synapse-venv && \
     /synapse-venv/bin/pip install "matrix-synapse[postgres,redis]==${SYNAPSE_VERSION}"
 
-RUN /synapse-venv/bin/pip install psycopg2 coincurve pycryptodome twisted>=20.3.0 click==7.1.2 docker-py
+RUN /synapse-venv/bin/pip install psycopg2 coincurve pycryptodome "twisted>=20.3.0" click==7.1.2 docker-py
 
 COPY eth_auth_provider.py /synapse-venv/lib/python3.7/site-packages/
 COPY admin_user_auth_provider.py /synapse-venv/lib/python3.7/site-packages/
