@@ -1,6 +1,8 @@
 FROM rust
 LABEL maintainer="Raiden Network Team <contact@raiden.network>"
-RUN apt-get update && apt-get -y install postgresql-client && apt-get clean
+RUN apt-get update && \
+    apt-get -y install postgresql-client jq && \
+    apt-get clean
 
 RUN cargo install --git https://github.com/erikjohnston/synapse-find-unreferenced-state-groups
 
