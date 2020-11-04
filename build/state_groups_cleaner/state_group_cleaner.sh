@@ -1,23 +1,25 @@
 #!/usr/bin/env bash
 
 ## Global parameters
-WAIT_TO_KILL_SYNAPSE=300
+WAIT_TO_KILL_SYNAPSE=120  # most likely useless, it seems synapse doesn't stop without being forced
 REGULAR_SLEEP=$((3600 * 7 * 24))
 
 # Select a random start time within the next ~7 days
 INITIAL_SLEEP=$(echo "$(( RANDOM )) * 2.63 * 7" | bc)
+echo "Sleeping for $INITIAL_SLEEP seconds"
 sleep "$INITIAL_SLEEP"
 
 while true;
 do
     # Find all running containers with an image name containing "synapse"
     SYNAPSE_CONTAINERS=$(curl -Ssg --unix-socket /var/run/docker.sock \
-        -XGET 'http://docker/containers/json?filters={"status":["running"],"label":"state_groups_cleaner_stop=true"}' |\
+        -XGET 'http://docker/containers/json?filters={"status":["running"],"label":["state_groups_cleaner_stop=true"]}' |\
         jq -r '.[].Id')
 
     # Stop the synapse containers (in background)
     for container_id in $SYNAPSE_CONTAINERS;
     do
+        echo "Stopping all containers with label 'state_groups_cleaner_stop=true'"
         curl -Ssg --unix-socket /var/run/docker.sock -XPOST \
         "http://docker/containers/$container_id/stop?t=$WAIT_TO_KILL_SYNAPSE" &
     done
@@ -45,7 +47,7 @@ do
     date
 
     # now remotely run psql to delete and vacuum
-    psql -u postgres -h db -w -d synapse -f clean_and_vacuum.sql
+    psql -U postgres -h db -w -d synapse -f clean_and_vacuum.sql
 
     date
 
@@ -58,5 +60,6 @@ do
     done
 
     # Now sleep until next execution
+    echo "Sleeping for $REGULAR_SLEEP seconds"
     sleep $REGULAR_SLEEP
 done
