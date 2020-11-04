@@ -162,6 +162,7 @@ services:
       - "traefik.http.services.metrics.loadbalancer.server.port=9101"
       - "traefik.http.middlewares.metrics-access-control.ipwhitelist.sourcerange=${CIDR_ALLOW_METRICS}"
       - "purge_restart_container=true"
+      - "state_groups_cleaner_stop=true"
 
   generic_worker:
     << : *IMAGE_SYNAPSE_VERSION
@@ -186,6 +187,7 @@ services:
       - "traefik.http.routers.generic_worker.service=generic_worker"
       - "traefik.http.services.generic_worker.loadbalancer.server.port=8008"
       - "traefik.http.services.generic_worker.loadbalancer.sticky=true"
+      - "state_groups_cleaner_stop=true"
 
   federation_sender:
     << : *IMAGE_SYNAPSE_VERSION
@@ -205,6 +207,7 @@ services:
     << : *log-config
     labels:
       - "purge_restart_container=true"
+      - "state_groups_cleaner_stop=true"
 
   user_dir:
     << : *IMAGE_SYNAPSE_VERSION
@@ -229,6 +232,7 @@ services:
       - "traefik.http.routers.user_dir.service=user_dir"
       - "traefik.http.services.user_dir.loadbalancer.server.port=8008"
       - "traefik.http.services.user_dir.loadbalancer.sticky=true"
+      - "state_groups_cleaner_stop=true"
 
   db:
     << : *IMAGE_DB_VERSION

@@ -12,8 +12,8 @@ while true;
 do
     # Find all running containers with an image name containing "synapse"
     SYNAPSE_CONTAINERS=$(curl -Ssg --unix-socket /var/run/docker.sock \
-        -XGET 'http://docker/containers/json?filters={"status":["running"]}' |\
-        jq -r '.[] | select(.Image | contains("synapse"))|.Id')
+        -XGET 'http://docker/containers/json?filters={"status":["running"],"label":"state_groups_cleaner_stop=true"}' |\
+        jq -r '.[].Id')
 
     # Stop the synapse containers (in background)
     for container_id in $SYNAPSE_CONTAINERS;
@@ -28,8 +28,8 @@ do
     do
         sleep 1
         SYNAPSE_RUNNING=$(curl -Ssg --unix-socket /var/run/docker.sock \
-            -XGET 'http://docker/containers/json?filters={"status":["running"]}' |\
-            jq -r '.[] | select(.Image | contains("synapse"))|.Id')
+            -XGET 'http://docker/containers/json?filters={"status":["running"],"label":["state_groups_cleaner_stop=true"]}' |\
+            jq -r '.[].Id')
     done
     echo "All synapses down"
 
