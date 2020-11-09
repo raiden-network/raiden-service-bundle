@@ -21,9 +21,9 @@ x-versions:
   metrics_redis: &IMAGE_METRICS_REDIS_VERSION
     image: oliver006/redis_exporter:v1.12.0
   traefik: &IMAGE_TRAEFIK_VERSION
-     image: traefik:2.2
+    image: traefik:2.2
   node_exporter: &IMAGE_NODE_EXPORTER
-    image: quay.io/prometheus/node-exporter:v2.22.1
+    image: quay.io/prometheus/node-exporter:v1.0.1
 # /versions
 
 x-defaults: &services-defaults
