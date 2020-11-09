@@ -22,6 +22,8 @@ x-versions:
     image: oliver006/redis_exporter:v1.12.0
   traefik: &IMAGE_TRAEFIK_VERSION
      image: traefik:2.2
+  node_exporter: &IMAGE_NODE_EXPORTER
+    image: quay.io/prometheus/node-exporter:v2.22.1
 # /versions
 
 x-defaults: &services-defaults
@@ -340,6 +342,26 @@ services:
       - "purge_restart_container"
       - "--credentials-file"
       - "/config/admin_user_cred.json"
+    << : *log-config
+
+  node_exporter:
+    << : *IMAGE_NODE_EXPORTER
+    restart: always
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - "--path.rootfs=/rootfs"
+      - "--path.procfs=/host/proc"
+      - "--path.sysfs=/host/sys"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.metrics_node.rule=Host(`metrics.node.${SERVER_NAME}`)"
+      - "traefik.http.routers.metrics_node.tls=true"
+      - "traefik.http.routers.metrics_node.tls.certresolver=le"
+      - "traefik.http.routers.metrics_node.middlewares=metrics_node-access-control@docker"
+      - "traefik.http.middlewares.metrics_node-access-control.ipwhitelist.sourcerange=${CIDR_ALLOW_METRICS}"
     << : *log-config
 
 # common traefik
