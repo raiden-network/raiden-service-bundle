@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -eo pipefail
+
 ## Global parameters
 WAIT_TO_KILL_SYNAPSE=120  # most likely useless, it seems synapse doesn't stop without being forced
 REGULAR_SLEEP=$((3600 * 7 * 24))
@@ -43,9 +45,7 @@ do
 
     rust-synapse-find-unreferenced-state-groups -p postgres://postgres@db/synapse -o "$FN"
 
-    touch /data/sgs.csv
-    rm /data/sgs.csv
-    cp "$FN" /data/sgs.csv
+    cp -f "$FN" /data/sgs.csv
 
     date
 
