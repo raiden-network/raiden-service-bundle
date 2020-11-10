@@ -14,6 +14,8 @@ x-versions:
     image: raidennetwork/raiden-service-bundle:2020.10.3-room_ensurer
   purger: &IMAGE_PURGER_VERSION
     image: raidennetwork/raiden-service-bundle:2020.10.3-purger
+  state_groups_cleaner: &IMAGE_STATE_GROUPS_CLEANER
+    image: raidennetwork/raiden-service-bundle:2020.10.3-state_groups_cleaner
   redis: &IMAGE_REDIS_VERSION
     image: redis:6.0
   metrics_db: &IMAGE_METRICS_DB_VERSION
@@ -326,7 +328,7 @@ services:
     << : *log-config
 
   state_groups_cleaner:
-    build: build/state_groups_cleaner
+    << : *IMAGE_STATE_GROUPS_CLEANER
     volumes:
       - ./data/db:/data
       - /var/run/docker.sock:/var/run/docker.sock
