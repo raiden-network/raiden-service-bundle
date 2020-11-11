@@ -1,4 +1,9 @@
 ## Changelog
+- 2020-11-11 - `2020.11.1rc1` - **Release Candidate**
+  - Disable `synapse` `retention_policy`
+  - Introduce `state_groups_cleaner`
+  - Introduce `prometheus` `node_exporter`
+  - Increase DB `max_wal_size`
 - 2020-10-08 - `2020.10.3` - **Bugfix release**
   - Fix an issue with the release process
 - 2020-10-07 - `2020.10.2` - **Bugfix release**
