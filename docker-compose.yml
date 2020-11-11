@@ -331,7 +331,7 @@ services:
     << : *IMAGE_STATE_GROUPS_CLEANER
     restart: always
     volumes:
-      - ./data/db:/data
+      - ${DATA_DIR:-./data}/db:/data
       - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       db:
