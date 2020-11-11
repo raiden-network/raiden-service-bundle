@@ -7,7 +7,7 @@ WAIT_TO_KILL_SYNAPSE=120  # most likely useless, it seems synapse doesn't stop w
 REGULAR_SLEEP=$((3600 * 24 * 7))
 
 # Check for last run (if any)
-LAST_FN="$(ls /data/sgs_*.csv|cut -d'_' -f2|cut -d'.' -f1|tail -1)"
+LAST_FN="$(find /data -iname 'sgs_*.csv'|cut -d'_' -f2|cut -d'.' -f1|tail -1)"
 
 if [[ $LAST_FN ]];
 then
