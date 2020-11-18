@@ -1,6 +1,7 @@
 {
     "active_servers": [
-        "transport.mainnet.raiden.anyblock.tools"
+        "transport.mainnet.raiden.anyblock.tools",
+        "transport.raiden.badgateway.tech"
     ],
     "all_servers": [
         "transport.mainnet.raiden.anyblock.tools",
