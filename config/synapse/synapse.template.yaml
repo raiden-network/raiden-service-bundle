@@ -51,11 +51,23 @@ update_user_directory: False
 
 ## Ratelimiting
 
+rc_joins:
+  local:
+    per_second: 10
+    burst_count: 30
+  remote:
+    per_second: 10
+    burst_count: 30
+
+rc_admin_redaction:
+  per_second: 10
+  burst_count: 30
+
 rc_message:
   # Number of messages a client can send per second on average
-  per_second: 30
+  per_second: 300
   # Number of message a client can send before being throttled
-  burst_count: 200
+  burst_count: 2000
 
 rc_login:
   address:
