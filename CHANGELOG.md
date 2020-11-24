@@ -1,5 +1,9 @@
 ## Changelog
-- 2020-11-11 - `2020.11.1rc1` - **Release Candidate**
+- 2020-11-24 - `2020.11.1` - **Maintenance Release**
+  - **Please check UPGRADING.md**
+  - Upgrade to Synapse `v1.22.1`
+  - Add configuration for new federation metrics
+  - Increase rate limits
   - Disable `synapse` `retention_policy`
   - Introduce `state_groups_cleaner`
   - Introduce `prometheus` `node_exporter`

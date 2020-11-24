@@ -5,17 +5,17 @@ x-versions:
   services: &IMAGE_RAIDEN_SERVICES_VERSION
     image: raidennetwork/raiden-services:v0.13.1
   db: &IMAGE_DB_VERSION
-    image: raidennetwork/raiden-service-bundle:2020.11.1rc1-db
+    image: raidennetwork/raiden-service-bundle:2020.11.1-db
   synapse: &IMAGE_SYNAPSE_VERSION
-    image: raidennetwork/raiden-service-bundle:2020.11.1rc1-synapse
+    image: raidennetwork/raiden-service-bundle:2020.11.1-synapse
   well-known-server: &IMAGE_WELL_KNOWN_VERSION
-    image: raidennetwork/raiden-service-bundle:2020.11.1rc1-well_known_server
+    image: raidennetwork/raiden-service-bundle:2020.11.1-well_known_server
   room_ensurer: &IMAGE_ROOM_ENSURER_VERSION
-    image: raidennetwork/raiden-service-bundle:2020.11.1rc1-room_ensurer
+    image: raidennetwork/raiden-service-bundle:2020.11.1-room_ensurer
   purger: &IMAGE_PURGER_VERSION
-    image: raidennetwork/raiden-service-bundle:2020.11.1rc1-purger
+    image: raidennetwork/raiden-service-bundle:2020.11.1-purger
   state_groups_cleaner: &IMAGE_STATE_GROUPS_CLEANER
-    image: raidennetwork/raiden-service-bundle:2020.11.1rc1-state_groups_cleaner
+    image: raidennetwork/raiden-service-bundle:2020.11.1-state_groups_cleaner
   redis: &IMAGE_REDIS_VERSION
     image: redis:6.0
   metrics_db: &IMAGE_METRICS_DB_VERSION

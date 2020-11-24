@@ -127,6 +127,8 @@ trusted_third_party_id_servers:
 ## Metrics ###
 enable_metrics: True
 report_stats: True
+federation_metrics_domains:
+${KNOWN_SERVERS}
 
 
 ## API Configuration ##

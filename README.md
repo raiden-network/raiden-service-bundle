@@ -5,7 +5,7 @@
 This repository contains the documentation and configuration necessary to run a
 Raiden Service Bundle.
 
-**Current release:** [2020.11.1rc1](https://github.com/raiden-network/raiden-service-bundle/tree/2020.11.1rc1)
+**Current release:** [2020.11.1](https://github.com/raiden-network/raiden-service-bundle/tree/2020.11.1)
 
 ## Table of Contents
 
@@ -145,11 +145,11 @@ host an application that relies on either Cookies or LocalStorage for security r
 
 ### Installing the RSB
 
-1. Clone the [current release version of this repository](https://github.com/raiden-network/raiden-service-bundle/tree/2020.11.1rc1)
+1. Clone the [current release version of this repository](https://github.com/raiden-network/raiden-service-bundle/tree/2020.11.1)
    to a suitable location on the server:
 
    ```shell
-   git clone -b 2020.11.1rc1 https://github.com/raiden-network/raiden-service-bundle.git
+   git clone -b 2020.11.1 https://github.com/raiden-network/raiden-service-bundle.git
    ```
 1. Copy `.env.template` to `.env` and modify the values to fit your setup. Please read [Configuring the `.env` file](#configuring-the-env-file) for detailed information.
    - We would appreciate it if you allow us access to the monitoring interfaces
