@@ -1,4 +1,15 @@
 # Upgrading existing installations
+## From `2020.10.3` or earlier
+
+Due to the jump in Synapse version we recommend to wipe the Synapse
+database when upgrading.
+
+This can be done by stopping the entire RSB:
+
+    docker-compose stop
+
+And then removing the postgres data directory (`<DATA_DIR>/db`).
+
 
 ## From `2020.06.0`
 
