@@ -1,7 +1,12 @@
 ## Changelog
+
+- 2020-11-25 - `2020.11.2` - **Bugfix Release**
+  - **Please check UPGRADING.md**
+  - Really upgrade to Synapse `v1.22.1`.
+  - Upgrade `raiden-services` to `v0.13.2`
 - 2020-11-24 - `2020.11.1` - **Maintenance Release**
   - **Please check UPGRADING.md**
-  - Upgrade to Synapse `v1.22.1`
+  - ~~Upgrade to Synapse `v1.22.1`~~
   - Add configuration for new federation metrics
   - Increase rate limits
   - Disable `synapse` `retention_policy`

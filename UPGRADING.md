@@ -1,4 +1,14 @@
 # Upgrading existing installations
+## From `2020.11.1` or earlier
+
+The previous release mistakenly did not upgrade Synapse, so please make sure to reset the database with this upgrade:
+
+This can be done by stopping the entire RSB:
+
+    docker-compose stop
+
+And then removing the postgres data directory (`<DATA_DIR>/db`).
+
 ## From `2020.10.3` or earlier
 
 Due to the jump in Synapse version we recommend to wipe the Synapse
