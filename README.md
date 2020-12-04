@@ -156,7 +156,7 @@ host an application that relies on either Cookies or LocalStorage for security r
      (to do that uncomment the default values of the `CIDR_ALLOW_METRICS` and `CIDR_ALLOW_PROXY` settings).
    - We also recommend that you provide your own monitoring. The setup of which is currently out of scope of this document.
    - Please read the disclaimers for the path finding and monitoring services carefully and uncomment the variables `<SERVICE>_ACCEPT_DISCLAIMER` if you agree. Note, that without agreement the services won't start.
-1. If you haven't done so before, run `./register-service-provider.sh` (it uses configuration values from `.env`). Please read the information provided [Registering as a RSB Provider](#registering-as-a-rsb-provider) carefully before executing the script.
+1. If you haven't done so before, run `./register-service-provider.sh register` (it uses configuration values from `.env`). Please read the information provided [Registering as a RSB Provider](#registering-as-a-rsb-provider) carefully before executing the script.
 1. Run `docker-compose up -d` to start all services
    - The services are configured to automatically restart in case of a crash or reboot
    - There is a DB maintenance tool, `state_groups_cleaner`, that will automatically stop synapse instances once a week.
@@ -198,7 +198,7 @@ After cloning the repository the `.env` file needs to be configured. A template 
 For your newly deployed Raiden Service Bundle to be used by Raiden nodes it must be registered.
 
 1. **Registering in the Services Registry On-Chain**
-  - In order to register as a service provider you need to run the script [`register-service-provider.sh`](https://github.com/raiden-network/raiden-service-bundle/blob/master/register-service-provider.sh).
+  - In order to register as a service provider you need to run the script [`register-service-provider.sh`](https://github.com/raiden-network/raiden-service-bundle/blob/master/register-service-provider.sh)` register`.
   - Make sure that you have configured a keystore file (`$KEYSTORE_FILE` in `.env`). If not, the script will exit with an error and you cannot register as a service provider.
   - Make sure that the configured account has enough funding to register as a service provider.
     You can check the [registry contract](https://etherscan.io/address/0xa80aEc9eebD8058A1468e563C025999590F32C08#readContract) for the current price of a slot.
