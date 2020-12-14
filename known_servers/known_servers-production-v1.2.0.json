@@ -1,11 +1,8 @@
 {
     "active_servers": [
-        "transport.raiden.badgateway.tech",
         "transport.raiden.overdoze.se"
     ],
     "all_servers": [
-        "transport.raiden.dappnode.io",
-        "transport.raiden.badgateway.tech",
         "transport.raiden.overdoze.se",
         "transport.rsb.test.raiden.network"
     ]
