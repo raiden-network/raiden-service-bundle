@@ -1,6 +1,7 @@
 {
     "active_servers": [
-        "transport.raiden.overdoze.se"
+        "transport.raiden.overdoze.se",
+        "transport.rsb.test.raiden.network"
     ],
     "all_servers": [
         "transport.raiden.overdoze.se",
