@@ -1,0 +1,23 @@
+{
+    "transport.raiden.overdoze.se": {
+        "operator": "hymner"
+    },
+    "transport.rsb.test.raiden.network": {
+        "operator": "dominik"
+    },
+    "transport.transport01.raiden.network": {
+        "operator": "rdn-t01"
+    },
+    "transport.transport02.raiden.network": {
+        "operator": "rdn-t02"
+    },
+    "transport.transport03.raiden.network": {
+        "operator": "rdn-t03"
+    },
+    "transport.transport04.raiden.network": {
+        "operator": "rdn-t04"
+    },
+    "transport.transport05.raiden.network": {
+        "operator": "rdn-t05"
+    }
+}
