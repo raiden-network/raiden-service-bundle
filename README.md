@@ -206,7 +206,7 @@ For your newly deployed Raiden Service Bundle to be used by Raiden nodes it must
     The script will also inform you about price as well.
 
 
-2. **Extending `known_servers.main.yaml`**
+2. **Extending `known_servers/known_servers-production-v1.2.0.json`**
   - In order to be whitelisted in the Matrix Federation, the list needs to be extended with your server name.
   - [Create an issue](https://github.com/raiden-network/raiden-service-bundle/issues/new) and submit the
    domain / URL of the newly deployed server for inclusion in the list of known servers.
