@@ -211,6 +211,7 @@ For your newly deployed Raiden Service Bundle to be used by Raiden nodes it must
   - [Create an issue](https://github.com/raiden-network/raiden-service-bundle/issues/new) and submit the
    domain / URL of the newly deployed server for inclusion in the list of known servers.
    Please, state your server name as you have set `$SERVER_NAME` in your `.env` file.
+  - It may take up to 24 hours for the federation to accept the server as a new member. Please note, that until this moment, the pathfinding service and monitoring service cannot run properly as they need to use the broadcasting rooms. Once the new server is accepted as part of the federation, all services will restart automatically.
 
 ### Verifying that the RSB is working
 
@@ -258,7 +259,7 @@ docker-compose up -d
 
  - A 'purger' service will run once a day, removing inactive users from global rooms
   to save disk space and processing performance.
-  Additionally if necessary it will restart the ``synapse`` service to fetch an up-to-date
+ - If necessary it will restart the ``synapse`` service to fetch an up-to-date
   whitelist of servers.
 
 ## Known issues
