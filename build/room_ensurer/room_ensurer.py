@@ -22,9 +22,9 @@ This utility uses for following algorithm to ensure there are no races in room c
     - Wait for the room with `#<public_room_alias>:<first_server>` to appear
     - Add server-local alias to the first_server-room
 """
-import hashlib
-
 from gevent.monkey import patch_all  # isort:skip
+
+import hashlib
 
 patch_all()  # isort:skip
 
@@ -91,6 +91,7 @@ class RoomEnsurer:
         self._username = username
         self._password = password
         self._own_server_name = own_server_name
+        self._signer = LocalSigner(hashlib.sha256(self._password.encode()).digest())
 
         if known_servers_url is None:
             known_servers_url = DEFAULT_MATRIX_KNOWN_SERVERS[Environment.PRODUCTION]
@@ -374,9 +375,8 @@ class RoomEnsurer:
         password = self._password
 
         if server_name != self._own_server_name:
-            signer = LocalSigner(hashlib.sha256(self._password.encode()).digest())
-            username = str(to_normalized_address(signer.address))
-            password = encode_hex(signer.sign(server_name.encode()))
+            username = str(to_normalized_address(self._signer.address))
+            password = encode_hex(self._signer.sign(server_name.encode()))
 
         try:
             response = api.login(
