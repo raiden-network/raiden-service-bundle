@@ -166,7 +166,7 @@ class RoomEnsurer:
             log.warning("No other servers available. Cannot join the rooms. Doing nothing.")
             return
 
-        has_unavailable_rooms = all(server_name_to_room_ids.values())
+        has_unavailable_rooms = not all(server_name_to_room_ids.values())
 
         are_all_available_rooms_the_same = all(
             room_id == expected_room_id
