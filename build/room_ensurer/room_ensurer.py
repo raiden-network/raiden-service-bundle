@@ -24,6 +24,8 @@ This utility uses for following algorithm to ensure there are no races in room c
 """
 from gevent.monkey import patch_all  # isort:skip
 
+import hashlib
+
 patch_all()  # isort:skip
 
 import json
@@ -53,9 +55,9 @@ from raiden.log_config import configure_logging
 from raiden.network.transport.matrix import make_room_alias
 from raiden.network.transport.matrix.client import GMatrixHttpApi
 from raiden.settings import DEFAULT_MATRIX_KNOWN_SERVERS
-from raiden.tests.utils.factories import make_signer
 from raiden.utils.cli import get_matrix_servers
 from raiden.utils.datastructures import merge_dict
+from raiden.utils.signer import LocalSigner
 from raiden.utils.typing import ChainID
 
 ENV_KEY_KNOWN_SERVERS = "URL_KNOWN_FEDERATION_SERVERS"
@@ -89,6 +91,7 @@ class RoomEnsurer:
         self._username = username
         self._password = password
         self._own_server_name = own_server_name
+        self._signer = LocalSigner(hashlib.sha256(self._password.encode()).digest())
 
         if known_servers_url is None:
             known_servers_url = DEFAULT_MATRIX_KNOWN_SERVERS[Environment.PRODUCTION]
@@ -198,7 +201,8 @@ class RoomEnsurer:
 
         if not has_unavailable_rooms and are_all_available_rooms_the_same:
             log.info(
-                "Room state ok.", server_rooms=server_name_to_room_ids,
+                "Room state ok.",
+                server_rooms=server_name_to_room_ids,
             )
 
         own_server_room_id = server_name_to_room_ids.get(self._own_server_name)
@@ -225,7 +229,9 @@ class RoomEnsurer:
             self._own_api.remove_room_alias(own_server_room_alias)
             self._join_and_alias_room(first_server_room_alias, own_server_room_alias)
             log.info(
-                "Room alias updated", alias=own_server_room_alias, room_id=expected_room_id,
+                "Room alias updated",
+                alias=own_server_room_alias,
+                room_id=expected_room_id,
             )
 
         # Ensure that all admins have admin power levels
@@ -369,9 +375,8 @@ class RoomEnsurer:
         password = self._password
 
         if server_name != self._own_server_name:
-            signer = make_signer()
-            username = str(to_normalized_address(signer.address))
-            password = encode_hex(signer.sign(server_name.encode()))
+            username = str(to_normalized_address(self._signer.address))
+            password = encode_hex(self._signer.sign(server_name.encode()))
 
         try:
             response = api.login(
