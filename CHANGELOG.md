@@ -1,5 +1,8 @@
 ## Changelog
-
+- ?? - `??` - **Maintenance Release**
+  - Remove `state_groups_cleaner`
+  - TODO: Re-enable retention policies
+  - TODO: Enable autovacuum
 - 2020-11-25 - `2020.11.2` - **Bugfix Release**
   - **Please check UPGRADING.md**
   - Really upgrade to Synapse `v1.22.1`.
