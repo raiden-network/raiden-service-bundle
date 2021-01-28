@@ -159,7 +159,6 @@ host an application that relies on either Cookies or LocalStorage for security r
 1. If you haven't done so before, run `./register-service-provider.sh register` (it uses configuration values from `.env`). Please read the information provided [Registering as a RSB Provider](#registering-as-a-rsb-provider) carefully before executing the script.
 1. Run `docker-compose up -d` to start all services
    - The services are configured to automatically restart in case of a crash or reboot
-   - There is a DB maintenance tool, `state_groups_cleaner`, that will automatically stop synapse instances once a week.
 
 **NOTE:**
 
