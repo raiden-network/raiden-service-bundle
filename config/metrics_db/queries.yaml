@@ -13,6 +13,42 @@ pg_table:
     - size_bytes:
         usage: "GAUGE"
         description: "Table size"
+pg_stat:
+  query: "SELECT current_database() as datname, relname table_name, n_tup_ins inserts, n_tup_upd updates, n_tup_del deletes, n_live_tup live_tuples, n_dead_tup dead_tuples, EXTRACT(EPOCH FROM (current_timestamp - last_autovacuum)) last_autovacuum_seconds, EXTRACT(EPOCH FROM (current_timestamp - last_autoanalyze)) last_autoanalyze_seconds, autovacuum_count, autoanalyze_count FROM pg_stat_user_tables ORDER BY relname;"
+  metrics:
+    - datname:
+        usage: "LABEL"
+        description: "Database name"
+    - table_name:
+        usage: "LABEL"
+        description: "Table name"
+    - inserts:
+        usage: "COUNTER"
+        description: "Number of inserts"
+    - updates:
+        usage: "COUNTER"
+        description: "Number of updates"
+    - deletes:
+        usage: "COUNTER"
+        description: "Number of deletes"
+    - live_tuples:
+        usage: "GAUGE"
+        description: "Number of live tuples"
+    - dead_tuples:
+        usage: "GAUGE"
+        description: "Number of dead tuples"
+    - last_autovacuum_seconds:
+        usage: "GAUGE"
+        description: "Last autovacuum age in seconds"
+    - last_autoanalyze_seconds:
+        usage: "GAUGE"
+        description: "Last autoanalyze age in seconds"
+    - autovacuum_count:
+        usage: "COUNTER"
+        description: "Count of autovacuum runs"
+    - autoanalyze_count:
+        usage: "COUNTER"
+        description: "Count of autoanalyze runs"
 synapse_room:
   query: "SELECT regexp_replace(room_alias, ':.*$', '') AS alias, room_id, 1 AS info  FROM room_aliases WHERE room_alias LIKE '#raiden_%';"
   metrics:
