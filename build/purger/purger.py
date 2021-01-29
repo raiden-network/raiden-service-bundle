@@ -18,7 +18,7 @@ from raiden.constants import DISCOVERY_DEFAULT_ROOM, Environment, Networks
 from raiden.network.transport.matrix import make_room_alias
 from raiden.network.transport.matrix.client import GMatrixHttpApi
 from raiden.settings import DEFAULT_MATRIX_KNOWN_SERVERS
-from raiden_contracts.utils.type_aliases import ChainID
+from raiden.utils.typing import ChainID
 
 SYNAPSE_CONFIG_PATH = "/config/synapse.yaml"
 USER_PURGING_THRESHOLD = 2 * 24 * 60 * 60  # 2 days
@@ -60,7 +60,7 @@ def purge(
     docker_restart_label: Optional[str],
     url_known_federation_servers: str,
 ) -> None:
-    """ Purge inactive users from broadcast rooms
+    """Purge inactive users from broadcast rooms
 
     SERVER: matrix synapse server url, e.g.: http://hostname
 
@@ -147,14 +147,16 @@ def purge(
                     click.secho(f"Whitelist changed. Restarting. new_list={remote_whitelist!r}")
                 except (KeyError, IndexError) as ex:
                     click.secho(
-                        f"Error fetching container status: {ex!r}. Restarting anyway.", err=True,
+                        f"Error fetching container status: {ex!r}. Restarting anyway.",
+                        err=True,
                     )
                 # restart container
                 container.restart(timeout=30)
 
 
 def run_user_purger(
-    api: GMatrixHttpApi, global_user_activity: UserActivityInfo,
+    api: GMatrixHttpApi,
+    global_user_activity: UserActivityInfo,
 ) -> UserActivityInfo:
     """
     The user purger mechanism finds inactive users which have been offline
@@ -178,7 +180,8 @@ def run_user_purger(
 
 
 def update_user_activity(
-    api: GMatrixHttpApi, global_user_activity: UserActivityInfo,
+    api: GMatrixHttpApi,
+    global_user_activity: UserActivityInfo,
 ) -> Dict[str, List[str]]:
     """
     runs update on users' presences which are about to be deleted.
@@ -245,7 +248,11 @@ def _fetch_new_members_for_network(
     api: GMatrixHttpApi, user_activity: Dict[str, int], discovery_room: RoomInfo, current_time: int
 ) -> None:
     try:
-        response = api._send("GET", f"/_synapse/admin/v1/rooms/{discovery_room.room_id}/members")
+        response = api._send(
+            "GET",
+            api_path="/_synapse/admin/v1",
+            path=f"/rooms/{discovery_room.room_id}/members",
+        )
         server_name = urlparse(api.base_url).netloc
         room_members = [
             member
@@ -273,7 +280,9 @@ def _update_user_activity_for_network(
     ]
 
     due_users = list()
-
+    click.secho(
+        f"Presences of {possible_candidates} users will be fetched due to possible inactivity. This might take a while."
+    )
     # presence updates are only run for possible due users.
     # This helps to spread the load on the server as good as possible
     # Since this script runs once a day, every day a couple of users are
@@ -305,6 +314,7 @@ def purge_inactive_users(
     network_to_due_users: Dict[str, List[str]],
 ) -> None:
     for network_key, due_users in network_to_due_users.items():
+        click.secho(f"Purging {len(due_users)} inactive users from Chain ID {network_key}")
         _purge_inactive_users_for_network(
             api=api,
             user_activity=global_user_activity["network_to_users"][network_key],
@@ -313,7 +323,9 @@ def purge_inactive_users(
 
 
 def _purge_inactive_users_for_network(
-    api: GMatrixHttpApi, user_activity: Dict[str, int], due_users: List[str],
+    api: GMatrixHttpApi,
+    user_activity: Dict[str, int],
+    due_users: List[str],
 ) -> None:
     for user_id in due_users:
         try:
