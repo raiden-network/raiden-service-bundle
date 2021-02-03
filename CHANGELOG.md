@@ -1,5 +1,6 @@
 ## Changelog
 - ?? - `??` - **Maintenance Release**
+  - Enable retention policy (needs autovacuum)
   - Remove `state_groups_cleaner`
   - TODO: Re-enable retention policies
   - TODO: Enable autovacuum
