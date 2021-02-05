@@ -281,7 +281,7 @@ def _update_user_activity_for_network(
 
     due_users = list()
     click.secho(
-        f"Presences of {possible_candidates} users will be fetched due to possible inactivity. This might take a while."
+        f"Presences of {len(possible_candidates)} users will be fetched due to possible inactivity. This might take a while."
     )
     # presence updates are only run for possible due users.
     # This helps to spread the load on the server as good as possible
