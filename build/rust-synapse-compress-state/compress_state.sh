@@ -32,10 +32,16 @@ sleep "$INITIAL_SLEEP"
 while true;
 do
     date
-    COMPRESS_ROOMS="${COMPRESS_ROOMS:-#raiden_goerli_path_finding:transport.transport01.raiden.network}"
-    # Construct a filename
-    for ROOM in $(echo "$COMPRESS_ROOMS");
+    COMPRESS_ROOMS="${COMPRESS_ROOMS}"
+    if [ -z "$COMPRESS_ROOMS" ];
+    then
+        echo "No rooms to work on, make sure you define 'COMPRESS_ROOMS' in environment"
+        exit 1
+    fi
+    # loop through rooms
+    for ROOM in $(printf "%s" "$COMPRESS_ROOMS");
     do
+        # Construct a filename
         FN="/data/compress_state-${ROOM}_$(date -Iseconds).sql"
 
         date
