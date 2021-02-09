@@ -6,7 +6,7 @@ set -eo pipefail
 REGULAR_SLEEP=$((3600 * 24 * 7))
 
 # Check for last run (if any)
-LAST_FN="$(find /data -iname 'sgs_*.csv'|cut -d'_' -f2|cut -d'.' -f1|head -1)"
+LAST_FN="$(find /data -iname 'compress_state-*.sql'|rev|cut -d '_' -f1|rev|cut -d'.' -f1|head -1)"
 
 if [[ $LAST_FN ]];
 then
