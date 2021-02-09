@@ -10,7 +10,7 @@ commands:
       build-target:
         description: "Which component are we building"
         type: enum
-        enum: ["synapse", "db", "well_known_server", "room_ensurer", "purger", "state_groups_cleaner"]
+        enum: ["synapse", "db", "well_known_server", "room_ensurer", "purger", "compress_state"]
     steps:
       - checkout
       - setup_remote_docker:
@@ -74,11 +74,11 @@ jobs:
       - build-container:
           build-target: purger
 
-  build_state_groups_cleaner:
+  build_rust_synapse_compress_state:
     executor: default
     steps:
       - build-container:
-          build-target: state_groups_cleaner
+          build-target: compress_state
 
 
 workflows:
@@ -90,7 +90,7 @@ workflows:
       - build_well_known
       - build_room_ensurer
       - build_purger
-      - build_state_groups_cleaner
+      - build_rust_synapse_compress_state
 
   tagged_images:
     jobs:
@@ -124,7 +124,7 @@ workflows:
               only: /.+/
             branches:
               ignore: /.*/
-      - build_state_groups_cleaner:
+      - build_rust_synapse_compress_state:
           filters:
             tags:
               only: /.+/
