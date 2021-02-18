@@ -43,14 +43,7 @@ from eth_utils import encode_hex, to_normalized_address
 from matrix_client.errors import MatrixError, MatrixHttpLibError, MatrixRequestError
 from structlog import get_logger
 
-from raiden.constants import (
-    DISCOVERY_DEFAULT_ROOM,
-    MONITORING_BROADCASTING_ROOM,
-    PATH_FINDING_BROADCASTING_ROOM,
-    Environment,
-    Networks,
-    ServerListType,
-)
+from raiden.constants import DISCOVERY_DEFAULT_ROOM, Environment, Networks, ServerListType
 from raiden.log_config import configure_logging
 from raiden.network.transport.matrix import make_room_alias
 from raiden.network.transport.matrix.client import GMatrixHttpApi
@@ -122,19 +115,14 @@ class RoomEnsurer:
     def ensure_rooms(self) -> None:
         exceptions = {}
         for network in Networks:
-            for alias_fragment in [
-                DISCOVERY_DEFAULT_ROOM,
-                MONITORING_BROADCASTING_ROOM,
-                PATH_FINDING_BROADCASTING_ROOM,
-            ]:
-                try:
-                    room_alias_prefix = make_room_alias(ChainID(network.value), alias_fragment)
-                    self._first_server_actions(room_alias_prefix)
-                    log.info(f"Ensuring {alias_fragment} room for {network.name}")
-                    self._ensure_room_for_network(room_alias_prefix)
-                except (MatrixError, EnsurerError) as ex:
-                    log.exception(f"Error while ensuring room for {network.name}.")
-                    exceptions[network] = ex
+            try:
+                room_alias_prefix = make_room_alias(ChainID(network.value), DISCOVERY_DEFAULT_ROOM)
+                self._first_server_actions(room_alias_prefix)
+                log.info(f"Ensuring discovery room for {network.name}")
+                self._ensure_room_for_network(room_alias_prefix)
+            except (MatrixError, EnsurerError) as ex:
+                log.exception(f"Error while ensuring room for {network.name}.")
+                exceptions[network] = ex
         if exceptions:
             log.error("Exceptions happened", exceptions=exceptions)
             raise MultipleErrors(exceptions)
