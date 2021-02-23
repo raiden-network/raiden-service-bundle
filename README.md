@@ -5,7 +5,7 @@
 This repository contains the documentation and configuration necessary to run a
 Raiden Service Bundle.
 
-**Current release:** [2020.11.2](https://github.com/raiden-network/raiden-service-bundle/tree/2020.11.2)
+**Current release:** [Latest](https://github.com/raiden-network/raiden-service-bundle/releases/latest)
 
 ## Table of Contents
 
@@ -144,6 +144,12 @@ host an application that relies on either Cookies or LocalStorage for security r
 
 
 ### Installing the RSB
+
+**NOTE:**
+This document will sometimes display release candidate versions, also known as pre-releases in the section below. You
+can identify this, if there is an `rcX` at the end of the version (E.g. `2019.03.0rc5`). When in doubt, always check against the
+[latest full release](https://github.com/raiden-network/raiden-service-bundle/releases/latest). If the version is
+different from what you see below, you should stick to the "full release" and replace the version accordingly.
 
 1. Clone the [current release version of this repository](https://github.com/raiden-network/raiden-service-bundle/tree/2020.11.2)
    to a suitable location on the server:
