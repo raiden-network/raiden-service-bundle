@@ -1,9 +1,11 @@
 ## Changelog
-- ?? - `??` - **Maintenance Release**
-  - Enable retention policy (needs autovacuum)
-  - Remove `state_groups_cleaner`
-  - TODO: Re-enable retention policies
-  - TODO: Enable autovacuum
+- 2021-02-23 - `2021.02.0-rc1` - **Release Candidate**
+  - Upgrade Synapse to `1.27.0`
+  - Re-enabled retention policies
+  - Added more prometheus metrics
+  - Removed `state_groups_cleaner`
+  - Added `rust-synapse-compress-state` tool
+  - Updated `raiden-services` to `v0.14.0`
 - 2020-11-25 - `2020.11.2` - **Bugfix Release**
   - **Please check UPGRADING.md**
   - Really upgrade to Synapse `v1.22.1`.
