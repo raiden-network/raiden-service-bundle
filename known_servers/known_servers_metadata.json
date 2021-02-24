@@ -2,6 +2,9 @@
     "transport.raiden.overdoze.se": {
         "operator": "hymner"
     },
+    "transport.raijin1.raiden.ninja": {
+        "operator": "mossimokim"
+    },
     "transport.rsb.test.raiden.network": {
         "operator": "dominik"
     },
