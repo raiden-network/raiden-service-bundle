@@ -1,11 +1,12 @@
 ## Changelog
-- 2021-02-23 - `2021.02.0-rc1` - **Release Candidate**
+- 2021-02-25 - `2021.02.0-rc2` - **Release Candidate**
+  - Fix an issue with option handling for `raiden-services`
   - Upgrade Synapse to `1.27.0`
   - Re-enabled retention policies
   - Added more prometheus metrics
   - Removed `state_groups_cleaner`
   - Added `rust-synapse-compress-state` tool
-  - Updated `raiden-services` to `v0.14.0`
+  - Updated `raiden-services` to `v0.14.1`
 - 2020-11-25 - `2020.11.2` - **Bugfix Release**
   - **Please check UPGRADING.md**
   - Really upgrade to Synapse `v1.22.1`.
