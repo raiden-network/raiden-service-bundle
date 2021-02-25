@@ -46,7 +46,7 @@ services:
   # raiden-services containers
   pfs:
     << : *services-defaults
-    command: ["python3", "-m", "pathfinding_service.cli", "--matrix-server", "https://transport.${SERVER_NAME}"]
+    command: ["python3", "-m", "pathfinding_service.cli", "--matrix-server", "https://transport.${SERVER_NAME}", "--password", "${PASSWORD}"]
     restart: always
     environment:
       - PFS_STATE_DB=/state/pfs-state.db
@@ -54,7 +54,6 @@ services:
       - SERVER_NAME
       - PFS_LOG_LEVEL=${LOG_LEVEL}
       - PFS_KEYSTORE_FILE=/keystore/${KEYSTORE_FILE}
-      - PFS_PASSWORD=${PASSWORD}
       - PFS_ETH_RPC=${ETH_RPC}
       - PFS_ACCEPT_DISCLAIMER=${PFS_ACCEPT_DISCLAIMER}
     depends_on:
@@ -81,7 +80,7 @@ services:
 
   ms:
     << : *services-defaults
-    command: ["python3", "-m", "monitoring_service.cli"]
+    command: ["python3", "-m", "monitoring_service.cli", "--password", "${PASSWORD}"]
     restart: always
     environment:
       - MS_STATE_DB=/state/ms-state.db
@@ -89,7 +88,6 @@ services:
       - MS_PORT=6000
       - MS_LOG_LEVEL=${LOG_LEVEL}
       - MS_KEYSTORE_FILE=/keystore/${KEYSTORE_FILE}
-      - MS_PASSWORD=${PASSWORD}
       - MS_ETH_RPC=${ETH_RPC}
       - MS_ACCEPT_DISCLAIMER=${MS_ACCEPT_DISCLAIMER}
     healthcheck:
@@ -114,13 +112,12 @@ services:
 
   msrc:
     << : *services-defaults
-    command: ["python3", "-m", "request_collector.cli", "--matrix-server", "https://transport.${SERVER_NAME}"]
+    command: ["python3", "-m", "request_collector.cli", "--matrix-server", "https://transport.${SERVER_NAME}", "--password", "${PASSWORD}"]
     restart: always
     environment:
       - MSRC_STATE_DB=/state/ms-state.db
       - MSRC_LOG_LEVEL=${LOG_LEVEL}
       - MSRC_KEYSTORE_FILE=/keystore/${KEYSTORE_FILE}
-      - MSRC_PASSWORD=${PASSWORD}
       - MSRC_CHAIN_ID=${CHAIN_ID}
       - MSRC_ACCEPT_DISCLAIMER=${MS_ACCEPT_DISCLAIMER}
     depends_on:
