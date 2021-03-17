@@ -194,3 +194,12 @@ database:
     host: db
     cp_min: 5
     cp_max: 20
+
+presence:
+    enabled: true
+    presence_router:
+      module: raiden_synapse_modules.pfs_presence_router.PFSPresenceRouter
+      config:
+        ethereum_rpc: ${ETH_RPC}
+        service_registry_address: 0x3bc9C8d34f5714327095358668fD436D7c457C6C
+        blockchain_sync_seconds: 15
