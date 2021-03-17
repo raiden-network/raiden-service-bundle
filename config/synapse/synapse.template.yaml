@@ -33,7 +33,7 @@ listeners:
       - names: [replication]
 
 redis:
-  enabled: true
+  enabled: false
   host: redis
 
 event_cache_size: "20K"
@@ -184,22 +184,16 @@ enable_group_creation: false
 
 user_directory:
   search_all_users: true
-
 database:
-  name: psycopg2
+  name: sqlite3
   args:
-    user: postgres
-    password:
-    database: synapse
-    host: db
-    cp_min: 5
-    cp_max: 20
+    database: ":memory:"
 
 presence:
     enabled: true
     presence_router:
       module: raiden_synapse_modules.pfs_presence_router.PFSPresenceRouter
       config:
-        ethereum_rpc: ${ETH_RPC}
+        ethereum_rpc: https://goerli.infura.io/v3/FILLMEIN
         service_registry_address: 0x3bc9C8d34f5714327095358668fD436D7c457C6C
         blockchain_sync_seconds: 15
