@@ -218,6 +218,19 @@ For your newly deployed Raiden Service Bundle to be used by Raiden nodes it must
    Please, state your server name as you have set `$SERVER_NAME` in your `.env` file.
   - It may take up to 24 hours for the federation to accept the server as a new member. Please note, that until this moment, the pathfinding service and monitoring service cannot run properly as they need to use the broadcasting rooms. Once the new server is accepted as part of the federation, all services will restart automatically.
 
+
+#### Interacting with the service registry contract
+Besides the subcommand `register` which can be used to register as a RSB provider, there are several other subcommands to interact with the service registry contract.
+
+Commands:
+
+- *extend*    Extend the duration of a service registration
+- *info*      Show information about current registration and deposits
+- *register*  Registers the address of a service deployment with the `ServiceRegistry`.
+- *withdraw*  Withdraw tokens deposited to the ServiceRegistry.
+
+You can call [`register-service-provider.sh`](https://github.com/raiden-network/raiden-service-bundle/blob/master/register-service-provider.sh)` <command>` to use them.
+
 ### Verifying that the RSB is working
 
 Check the status of the services by executing `docker-compose ps`.
