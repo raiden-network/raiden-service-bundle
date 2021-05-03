@@ -226,7 +226,7 @@ Commands:
 
 - *extend*    Extend the duration of a service registration
 - *info*      Show information about current registration and deposits
-- *register*  Registers the address of a service deployment with the...
+- *register*  Registers the address of a service deployment with the `ServiceRegistry`.
 - *withdraw*  Withdraw tokens deposited to the ServiceRegistry.
 
 You can call [`register-service-provider.sh`](https://github.com/raiden-network/raiden-service-bundle/blob/master/register-service-provider.sh)` <command>` to use them.
