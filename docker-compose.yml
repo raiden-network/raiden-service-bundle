@@ -10,8 +10,6 @@ x-versions:
     image: raidennetwork/raiden-service-bundle:2021.02.0rc2-synapse
   well-known-server: &IMAGE_WELL_KNOWN_VERSION
     image: raidennetwork/raiden-service-bundle:2021.02.0rc2-well_known_server
-  purger: &IMAGE_PURGER_VERSION
-    image: raidennetwork/raiden-service-bundle:2021.02.0rc2-purger
   redis: &IMAGE_REDIS_VERSION
     image: redis:6.0
   metrics_db: &IMAGE_METRICS_DB_VERSION
@@ -307,29 +305,6 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    << : *log-config
-
-  purger:
-    << : *IMAGE_PURGER_VERSION
-    restart: always
-    volumes:
-      - ./config/synapse:/config
-      - /var/run/docker.sock:/var/run/docker.sock
-    working_dir: /app
-    depends_on:
-      synapse:
-        condition: service_healthy
-      db:
-        condition: service_healthy
-    environment:
-      - PURGE_SLEEP_UNTIL=05:00:00
-      - URL_KNOWN_FEDERATION_SERVERS
-    command:
-      - "https://transport.${SERVER_NAME}"
-      - "--docker-restart-label"
-      - "purge_restart_container"
-      - "--credentials-file"
-      - "/config/admin_user_cred.json"
     << : *log-config
 
   node_exporter:
