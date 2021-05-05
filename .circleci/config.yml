@@ -82,7 +82,6 @@ workflows:
       - build_synapse
       - build_db
       - build_well_known
-      - build_room_ensurer
       - build_purger
       - build_rust_synapse_compress_state
 
