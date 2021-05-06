@@ -10,8 +10,6 @@ x-versions:
     image: raidennetwork/raiden-service-bundle:2021.02.0rc2-synapse
   well-known-server: &IMAGE_WELL_KNOWN_VERSION
     image: raidennetwork/raiden-service-bundle:2021.02.0rc2-well_known_server
-  room_ensurer: &IMAGE_ROOM_ENSURER_VERSION
-    image: raidennetwork/raiden-service-bundle:2021.02.0rc2-room_ensurer
   purger: &IMAGE_PURGER_VERSION
     image: raidennetwork/raiden-service-bundle:2021.02.0rc2-purger
   redis: &IMAGE_REDIS_VERSION
@@ -299,26 +297,6 @@ services:
       - "traefik.http.routers.well-known.entrypoints=websecure"
       - "traefik.http.routers.well-known.tls=true"
       - "traefik.http.routers.well-known.tls.certresolver=le"
-
-  room_ensurer:
-    << : *IMAGE_ROOM_ENSURER_VERSION
-    restart: always
-    volumes:
-      - ./config/synapse:/config
-    depends_on:
-      synapse:
-        condition: service_healthy
-    environment:
-      - SERVER_NAME=transport.${SERVER_NAME}
-      - URL_KNOWN_FEDERATION_SERVERS
-    command:
-      - "--own-server"
-      - "transport.${SERVER_NAME}"
-      - "--log-level"
-      - "DEBUG"
-      - "--credentials-file"
-      - "/config/admin_user_cred.json"
-    << : *log-config
 
   compress_state:
     << : *IMAGE_COMPRESS_STATE
