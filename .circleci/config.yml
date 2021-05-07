@@ -30,6 +30,7 @@ commands:
               --build-arg POSTGRES_VERSION \
               --build-arg NGINX_VERSION \
               --build-arg RAIDEN_VERSION \
+              --build-arg RAIDEN_SYNAPSE_MODULES \
               -t ${IMAGE_NAME}:${DOCKER_TAG} \
               build/<< parameters.build-target >>
             echo "$DEVOPS_DOCKERHUB_TOKEN" | docker login -u brainbotdevops --password-stdin

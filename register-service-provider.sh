@@ -29,11 +29,14 @@ get_env_setting KEYSTORE_FILE
 get_env_setting LOG_LEVEL
 get_env_setting PASSWORD optional
 get_env_setting SERVER_NAME
+get_env_setting DEVELOPMENT_ENVIRONMENT optional
 
+# "demo" is the default value for now. For reasons.
+DEVELOPMENT_ENVIRONMENT="${DEVELOPMENT_ENVIRONMENT:-demo}"
 
 IMAGE=$(grep "raidennetwork/raiden-services:" docker-compose.yml|cut -d ':' -f2-|xargs)
-CMD="python3 -m raiden_libs.service_registry"
-SUBCMD="${@:---help}"
+CMD=( "python3" "-m" "raiden_libs.service_registry")
+SUBCMD=( "${@:---help}" )
 
 docker run --rm -it \
   -v "${DATA_DIR:-$(pwd)/data}"/state:/state \
@@ -42,22 +45,27 @@ docker run --rm -it \
   -e SR_REGISTER_KEYSTORE_FILE=/keystore/"${KEYSTORE_FILE}" \
   -e SR_REGISTER_PASSWORD="${PASSWORD}" \
   -e SR_REGISTER_ETH_RPC="${ETH_RPC}" \
+  -e SR_REGISTER_DEVELOPMENT_ENVIRONMENT="${DEVELOPMENT_ENVIRONMENT}" \
   -e SR_REGISTER_SERVICE_URL="https://pfs.${SERVER_NAME}" \
   -e SR_EXTEND_LOG_LEVEL="${LOG_LEVEL}" \
   -e SR_EXTEND_KEYSTORE_FILE=/keystore/"${KEYSTORE_FILE}" \
   -e SR_EXTEND_PASSWORD="${PASSWORD}" \
   -e SR_EXTEND_ETH_RPC="${ETH_RPC}" \
+  -e SR_EXTEND_DEVELOPMENT_ENVIRONMENT="${DEVELOPMENT_ENVIRONMENT}" \
   -e SR_EXTEND_STATE_DB="/state/ms-state.db" \
   -e SR_INFO_LOG_LEVEL="${LOG_LEVEL}" \
   -e SR_INFO_KEYSTORE_FILE=/keystore/"${KEYSTORE_FILE}" \
   -e SR_INFO_PASSWORD="${PASSWORD}" \
   -e SR_INFO_ETH_RPC="${ETH_RPC}" \
+  -e SR_INFO_DEVELOPMENT_ENVIRONMENT="${DEVELOPMENT_ENVIRONMENT}" \
   -e SR_INFO_STATE_DB="/state/ms-state.db" \
   -e SR_WITHDRAW_LOG_LEVEL="${LOG_LEVEL}" \
   -e SR_WITHDRAW_KEYSTORE_FILE=/keystore/"${KEYSTORE_FILE}" \
   -e SR_WITHDRAW_PASSWORD="${PASSWORD}" \
   -e SR_WITHDRAW_ETH_RPC="${ETH_RPC}" \
+  -e SR_WITHDRAW_DEVELOPMENT_ENVIRONMENT="${DEVELOPMENT_ENVIRONMENT}" \
   -e SR_WITHDRAW_STATE_DB="/state/ms-state.db" \
   --env-file .env \
   "${IMAGE}" \
-  ${CMD} ${SUBCMD}
+  "${CMD[@]}" \
+  "${SUBCMD[@]}"

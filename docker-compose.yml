@@ -3,7 +3,7 @@ version: '2.3'
 # versions: change these in order to pin versions for a certain releases
 x-versions:
   services: &IMAGE_RAIDEN_SERVICES_VERSION
-    image: raidennetwork/raiden-services:v0.14.1
+    image: raidennetwork/raiden-services:v0.14.4
   db: &IMAGE_DB_VERSION
     image: raidennetwork/raiden-service-bundle:2021.02.0rc2-db
   synapse: &IMAGE_SYNAPSE_VERSION
@@ -134,6 +134,8 @@ services:
     environment:
       - SERVER_NAME=transport.${SERVER_NAME}
       - URL_KNOWN_FEDERATION_SERVERS
+      - SERVICE_REGISTRY
+      - ETH_RPC
     command: ["synapse"]
     depends_on:
       db:
@@ -158,72 +160,6 @@ services:
       - "traefik.http.middlewares.metrics-access-control.ipwhitelist.sourcerange=${CIDR_ALLOW_METRICS}"
       - "purge_restart_container=true"
 
-  generic_worker:
-    << : *IMAGE_SYNAPSE_VERSION
-    restart: always
-    volumes:
-      - ./config/synapse:/config
-      - ${DATA_DIR:-./data}/synapse:/data
-      - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      - SERVER_NAME=transport.${SERVER_NAME}
-    depends_on:
-      synapse:
-        condition: service_healthy
-    command: ["worker", "generic_worker"]
-    scale: ${WORKER_COUNT:-4}
-    <<: *log-config
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.generic_worker.rule=Host(`transport.${SERVER_NAME}`) && (PathPrefix(`/_matrix/client/versions`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0)}/initialSync`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0)}/rooms/{room:[^/]+}/initialSync`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/account/3pid`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/join/`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/joined_groups`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/keys/changes`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/keys/query`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/login`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/profile/`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/publicised_groups`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/publicRooms`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/rooms/{room:.*}/context/{context:.*}`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/rooms/{room:.*}/joined_members`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/rooms/{room:.*}/members`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/rooms/{room:.*}/send`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/rooms/{room:.*}/state`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/rooms/{room:.*}/{action:(join|invite|leave|ban|unban|kick)}`) || PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/voip/turnServer`) || PathPrefix(`/_matrix/client/{version:(api/v1|v2_alpha|r0)}/events`) || PathPrefix(`/_matrix/client/{version:(v2_alpha|r0)}/sync`) || PathPrefix(`/_matrix/federation/v1/{type:(backfill|event|event_auth|exchange_third_party_invite|get_groups_publicised|get_missing_events|invite|make_join|make_leave|publicRoom|query|query_auth|send|send_join|send_leave|state|state_ids|user/devices)}`) || PathPrefix(`/_matrix/federation/v2/{type:(invite|send_join|send_leave)}`) || PathPrefix(`/_matrix/key/v2/query`))"
-      - "traefik.http.routers.generic_worker.tls=true"
-      - "traefik.http.routers.generic_worker.tls.certresolver=le"
-      - "traefik.http.routers.generic_worker.service=generic_worker"
-      - "traefik.http.services.generic_worker.loadbalancer.server.port=8008"
-      - "traefik.http.services.generic_worker.loadbalancer.sticky=true"
-
-  federation_sender:
-    << : *IMAGE_SYNAPSE_VERSION
-    restart: always
-    volumes:
-      - ./config/synapse:/config
-      - ${DATA_DIR:-./data}/synapse:/data
-      - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      - SERVER_NAME=transport.${SERVER_NAME}
-    depends_on:
-      synapse:
-        condition: service_healthy
-    command: ["worker", "federation_sender"]
-    healthcheck:
-      disable: true
-    << : *log-config
-    labels:
-      - "purge_restart_container=true"
-
-  user_dir:
-    << : *IMAGE_SYNAPSE_VERSION
-    restart: always
-    volumes:
-      - ./config/synapse:/config
-      - ${DATA_DIR:-./data}/synapse:/data
-      - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      - SERVER_NAME=transport.${SERVER_NAME}
-    depends_on:
-      synapse:
-        condition: service_healthy
-    command: ["worker", "user_dir"]
-    scale: ${WORKER_COUNT:-4}
-    << : *log-config
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.user_dir.rule=Host(`transport.${SERVER_NAME}`) && PathPrefix(`/_matrix/client/{version:(api/v1|r0|unstable)}/user_directory/search`)"
-      - "traefik.http.routers.user_dir.tls=true"
-      - "traefik.http.routers.user_dir.tls.certresolver=le"
-      - "traefik.http.routers.user_dir.service=user_dir"
-      - "traefik.http.services.user_dir.loadbalancer.server.port=8008"
-      - "traefik.http.services.user_dir.loadbalancer.sticky=true"
 
   db:
     << : *IMAGE_DB_VERSION
