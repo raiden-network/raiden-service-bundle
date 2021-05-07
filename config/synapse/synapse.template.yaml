@@ -139,26 +139,13 @@ room_invite_state_types:
 
 ## Room Creation Rules ##
 alias_creation_rules:
-  - user_id: "@admin*"
-    alias: "#raiden_*_*"
-    room_id: "*"
-    action: allow
   - user_id: "*"
-    alias: "#raiden_*_*"
+    alias: "*"
     room_id: "*"
     action: deny
 
-## Message Retention Policy ##
-retention:
-  enabled: true
-  default_policy:
-    min_lifetime: 14d # not in use by the servers yet
-    max_lifetime: 15d
-  allowed_lifetime_max: 15d
-  purge_jobs:
-    - longest_max_lifetime: 15d
-      interval: 1d
-
+## Allow fetching displayname
+limit_profile_requests_to_users_who_share_rooms: False
 
 # A list of application service config file to use
 app_service_config_files: []
