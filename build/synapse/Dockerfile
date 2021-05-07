@@ -6,19 +6,26 @@ RUN /opt/venv/bin/python -c \
     from raiden.constants import Environment; \
     print(DEFAULT_MATRIX_KNOWN_SERVERS[Environment.PRODUCTION])' > /known_servers.default.txt
 
-FROM python:3.7
+FROM python:3.9
 LABEL maintainer="Raiden Network Team <contact@raiden.network>"
 
+RUN python -m venv /synapse-venv && /synapse-venv/bin/pip install wheel
+
 ARG SYNAPSE_VERSION
+ARG RAIDEN_SYNAPSE_MODULES
 
-RUN \
-    python -m venv /synapse-venv && \
-    /synapse-venv/bin/pip install "matrix-synapse[postgres,redis]==${SYNAPSE_VERSION}"
+RUN /synapse-venv/bin/pip install \
+    "matrix-synapse[postgres,redis]==${SYNAPSE_VERSION}" \
+    psycopg2 \
+    coincurve \
+    pycryptodome \
+    "twisted>=20.3.0" \
+    click==7.1.2 \
+    docker-py \
+    raiden-synapse-modules==${RAIDEN_SYNAPSE_MODULES}
 
-RUN /synapse-venv/bin/pip install psycopg2 coincurve pycryptodome "twisted>=20.3.0" click==7.1.2 docker-py
-
-COPY eth_auth_provider.py /synapse-venv/lib/python3.7/site-packages/
-COPY admin_user_auth_provider.py /synapse-venv/lib/python3.7/site-packages/
+COPY eth_auth_provider.py /synapse-venv/lib/python3.9/site-packages/
+COPY admin_user_auth_provider.py /synapse-venv/lib/python3.9/site-packages/
 COPY synapse-entrypoint.sh /bin/
 COPY render_config_template.py /bin/
 COPY --from=RAIDEN /known_servers.default.txt /

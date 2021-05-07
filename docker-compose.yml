@@ -3,7 +3,7 @@ version: '2.3'
 # versions: change these in order to pin versions for a certain releases
 x-versions:
   services: &IMAGE_RAIDEN_SERVICES_VERSION
-    image: raidennetwork/raiden-services:v0.14.1
+    image: raidennetwork/raiden-services:v0.14.2
   db: &IMAGE_DB_VERSION
     image: raidennetwork/raiden-service-bundle:2021.02.0rc2-db
   synapse: &IMAGE_SYNAPSE_VERSION
@@ -138,6 +138,8 @@ services:
     environment:
       - SERVER_NAME=transport.${SERVER_NAME}
       - URL_KNOWN_FEDERATION_SERVERS
+      - SERVICE_REGISTRY
+      - ETH_RPC
     command: ["synapse"]
     depends_on:
       db:
@@ -171,6 +173,8 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - SERVER_NAME=transport.${SERVER_NAME}
+      - SERVICE_REGISTRY
+      - ETH_RPC
     depends_on:
       synapse:
         condition: service_healthy
@@ -195,6 +199,8 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - SERVER_NAME=transport.${SERVER_NAME}
+      - SERVICE_REGISTRY
+      - ETH_RPC
     depends_on:
       synapse:
         condition: service_healthy
@@ -214,6 +220,8 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - SERVER_NAME=transport.${SERVER_NAME}
+      - SERVICE_REGISTRY
+      - ETH_RPC
     depends_on:
       synapse:
         condition: service_healthy

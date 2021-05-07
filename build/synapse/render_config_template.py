@@ -9,6 +9,9 @@ from urllib.error import URLError
 from urllib.request import urlopen
 
 import click
+from eth_typing import ChecksumAddress
+from eth_utils import to_checksum_address
+
 from docker import Client
 
 PATH_CONFIG_SYNAPSE = Path("/config/synapse.yaml")
@@ -59,12 +62,19 @@ def get_known_federation_servers(url_known_federation_servers: Optional[str]) ->
     return ""
 
 
-def render_synapse_config(server_name: str, url_known_federation_servers: Optional[str]) -> None:
+def render_synapse_config(
+    server_name: str,
+    service_registry_address: ChecksumAddress,
+    eth_rpc_url: str,
+    url_known_federation_servers: Optional[str],
+) -> None:
     template_content = PATH_CONFIG_TEMPLATE_SYNAPSE.read_text()
     rendered_config = string.Template(template_content).substitute(
         MACAROON_KEY=get_macaroon_key(),
         SERVER_NAME=server_name,
         KNOWN_SERVERS=get_known_federation_servers(url_known_federation_servers),
+        ETH_RPC=eth_rpc_url,
+        SERVICE_REGISTRY=service_registry_address,
     )
     PATH_CONFIG_SYNAPSE.write_text(rendered_config)
 
@@ -119,9 +129,14 @@ def main() -> None:
 def synapse() -> None:
     url_known_federation_servers = os.environ.get("URL_KNOWN_FEDERATION_SERVERS")
     server_name = os.environ["SERVER_NAME"]
+    eth_rpc_url = os.environ["ETH_RPC"]
+    service_registry_address = to_checksum_address(os.environ["SERVICE_REGISTRY"])
 
     render_synapse_config(
-        server_name=server_name, url_known_federation_servers=url_known_federation_servers
+        server_name=server_name,
+        service_registry_address=service_registry_address,
+        eth_rpc_url=eth_rpc_url,
+        url_known_federation_servers=url_known_federation_servers,
     )
     render_well_known_file(server_name=server_name)
     generate_admin_user_credentials()

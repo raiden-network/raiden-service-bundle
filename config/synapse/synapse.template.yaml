@@ -123,6 +123,14 @@ bcrypt_rounds: 12
 trusted_third_party_id_servers:
   - localhost
 
+presence:
+  enabled: true
+  presence_router:
+    module: raiden_synapse_modules.pfs_presence_router.PFSPresenceRouter
+    config:
+      ethereum_rpc: ${ETH_RPC}
+      service_registry_address: ${SERVICE_REGISTRY}
+      blockchain_sync_seconds: 15
 
 ## Metrics ###
 enable_metrics: True
