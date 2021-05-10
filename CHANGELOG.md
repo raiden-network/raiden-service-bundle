@@ -1,4 +1,10 @@
 ## Changelog
+- 2021-05-10 - `2021.05.0-rc` - **Release Candidate**
+  - Upgrad Synapse to 1.33.0
+  - Use Presence Router Module to distribute presences to PFS
+  - Remove global rooms and Room Ensurer
+  - Temporarily switch back to one main process in synapse
+  - Allow using subcommands in Service Registry script
 - 2021-02-25 - `2021.02.0-rc2` - **Release Candidate**
   - Fix an issue with option handling for `raiden-services`
   - Upgrade Synapse to `1.27.0`
