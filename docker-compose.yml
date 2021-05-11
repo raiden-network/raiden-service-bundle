@@ -20,8 +20,6 @@ x-versions:
     image: traefik:2.2
   node_exporter: &IMAGE_NODE_EXPORTER
     image: quay.io/prometheus/node-exporter:v1.0.1
-  compress_state: &IMAGE_COMPRESS_STATE
-    image: raidennetwork/raiden-service-bundle:2021.05.0rc2-rust_synapse_compress_state
 # /versions
 
 x-defaults: &services-defaults
@@ -233,17 +231,6 @@ services:
       - "traefik.http.routers.well-known.entrypoints=websecure"
       - "traefik.http.routers.well-known.tls=true"
       - "traefik.http.routers.well-known.tls.certresolver=le"
-
-  compress_state:
-    << : *IMAGE_COMPRESS_STATE
-    restart: always
-    env_file: .env
-    volumes:
-      - ${DATA_DIR:-./data}/db:/data
-    depends_on:
-      db:
-        condition: service_healthy
-    << : *log-config
 
   node_exporter:
     << : *IMAGE_NODE_EXPORTER
