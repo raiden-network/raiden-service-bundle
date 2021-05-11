@@ -5,11 +5,11 @@ x-versions:
   services: &IMAGE_RAIDEN_SERVICES_VERSION
     image: raidennetwork/raiden-services:v0.15.1
   db: &IMAGE_DB_VERSION
-    image: raidennetwork/raiden-service-bundle:2021.02.0rc2-db
+    image: raidennetwork/raiden-service-bundle:2021.05.0rc2-db
   synapse: &IMAGE_SYNAPSE_VERSION
-    image: raidennetwork/raiden-service-bundle:2021.02.0rc2-synapse
+    image: raidennetwork/raiden-service-bundle:2021.05.0rc2-synapse
   well-known-server: &IMAGE_WELL_KNOWN_VERSION
-    image: raidennetwork/raiden-service-bundle:2021.02.0rc2-well_known_server
+    image: raidennetwork/raiden-service-bundle:2021.05.0rc2-well_known_server
   redis: &IMAGE_REDIS_VERSION
     image: redis:6.0
   metrics_db: &IMAGE_METRICS_DB_VERSION
@@ -20,7 +20,6 @@ x-versions:
     image: traefik:2.2
   node_exporter: &IMAGE_NODE_EXPORTER
     image: quay.io/prometheus/node-exporter:v1.0.1
-
 # /versions
 
 x-defaults: &services-defaults
@@ -147,11 +146,11 @@ services:
       - "traefik.http.routers.synapse.rule=Host(`transport.${SERVER_NAME}`)"
       - "traefik.http.routers.synapse.tls=true"
       - "traefik.http.routers.synapse.tls.certresolver=le"
-      - "traefik.http.routers.synapse.middlewares=tls-headers-middleware"
+      - "traefik.http.routers.synapse.middlewares=tls-headers-middleware@docker"
       - "traefik.http.routers.synapse.service=synapse"
       - "traefik.http.services.synapse.loadbalancer.server.port=8008"
       - "traefik.http.services.synapse.loadbalancer.healthcheck.path=/_matrix/client/versions"
-      - "traefik.http.middlewares.tls-headers-middleware.headers.sslProxyHeaders=true"
+      - "traefik.http.middlewares.tls-headers-middleware.headers.customrequestheaders.X-Forwarded-Proto=https"
       - "traefik.http.routers.metrics.rule=Host(`metrics.transport.${SERVER_NAME}`)"
       - "traefik.http.routers.metrics.tls=true"
       - "traefik.http.routers.metrics.tls.certresolver=le"

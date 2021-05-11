@@ -139,12 +139,6 @@ federation_metrics_domains:
 ${KNOWN_SERVERS}
 
 
-## API Configuration ##
-room_invite_state_types:
-  - "m.room.join_rules"
-  - "m.room.canonical_alias"
-  - "m.room.name"
-
 ## Room Creation Rules ##
 alias_creation_rules:
   - user_id: "*"
