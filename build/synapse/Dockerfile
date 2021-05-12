@@ -30,6 +30,7 @@ RUN sed -i 's/\(\s*\)if self.worker_type/\1if True or self.worker_type/' /synaps
 
 COPY eth_auth_provider.py /synapse-venv/lib/python3.9/site-packages/
 COPY admin_user_auth_provider.py /synapse-venv/lib/python3.9/site-packages/
+COPY federation_whitelist_reloader.py /synapse-venv/lib/python3.9/site-packages/
 COPY synapse-entrypoint.sh /bin/
 COPY render_config_template.py /bin/
 COPY --from=RAIDEN /known_servers.default.txt /

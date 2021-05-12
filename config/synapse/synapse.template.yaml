@@ -117,6 +117,9 @@ password_providers:
     config:
       enabled: true
       credentials_file: /config/admin_user_cred.json
+  - module: 'federation_whitelist_reloader.FederationWhitelistReloaderProvider'
+    config:
+      enabled: true
 
 bcrypt_rounds: 12
 
