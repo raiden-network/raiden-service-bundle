@@ -1,6 +1,8 @@
 ## Changelog
-- 2021-05-10 - `2021.05.0-rc` - **Release Candidate**
-  - Upgrad Synapse to 1.33.0
+- 2021-05-12 - `2021.05.0-rc3` - **Release Candidate**
+  - internal module to update federation whitelist
+- 2021-05-10 - `2021.05.0-rc1` - **Release Candidate**
+  - Upgrade Synapse to 1.33.0
   - Use Presence Router Module to distribute presences to PFS
   - Remove global rooms and Room Ensurer
   - Temporarily switch back to one main process in synapse
