@@ -1,5 +1,5 @@
 ## Changelog
-- 2021-05-12 - `2021.05.0-rc2` - **Release Candidate**
+- 2021-05-12 - `2021.05.0-rc3` - **Release Candidate**
   - internal module to update federation whitelist
 - 2021-05-10 - `2021.05.0-rc1` - **Release Candidate**
   - Upgrade Synapse to 1.33.0
