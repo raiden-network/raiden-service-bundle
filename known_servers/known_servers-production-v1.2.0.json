@@ -1,10 +1,8 @@
 {
     "active_servers": [
-        "transport.raiden.overdoze.se",
-        "transport.raijin1.raiden.ninja"
+        "transport.raiden.badgateway.tech"
     ],
     "all_servers": [
-        "transport.raiden.overdoze.se",
-        "transport.raijin1.raiden.ninja"
+        "transport.raiden.badgateway.tech"
     ]
 }
