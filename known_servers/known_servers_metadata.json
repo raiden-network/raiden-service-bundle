@@ -5,8 +5,8 @@
     "transport.raijin1.raiden.ninja": {
         "operator": "mossimokim"
     },
-    "transport.rsb.test.raiden.network": {
-        "operator": "dominik"
+    "transport.raiden.badgateway.tech": {
+        "operator": "boris"
     },
     "transport.transport01.raiden.network": {
         "operator": "rdn-t01"
