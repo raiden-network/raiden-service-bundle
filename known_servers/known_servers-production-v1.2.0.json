@@ -3,6 +3,7 @@
         "transport.raiden.badgateway.tech"
     ],
     "all_servers": [
-        "transport.raiden.badgateway.tech"
+        "transport.raiden.badgateway.tech",
+        "transport.raiden.overdoze.se"
     ]
 }
