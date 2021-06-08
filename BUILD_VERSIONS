@@ -1,7 +1,6 @@
 # Build versions - these are sourced inside the circleci build steps
-export SYNAPSE_VERSION=v1.33.0
+export SYNAPSE_VERSION=v1.35.1
 export POSTGRES_VERSION=10
 export NGINX_VERSION=1.17
-# FIXME: Updated after the next Raiden release
-export RAIDEN_VERSION=develop
+export RAIDEN_VERSION=v2.0.0rc4
 export RAIDEN_SYNAPSE_MODULES=0.1.3
