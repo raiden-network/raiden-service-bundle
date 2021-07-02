@@ -110,14 +110,14 @@ enable_registration_captcha: False
 allow_guest_access: False
 
 password_providers:
-  - module: 'eth_auth_provider.EthAuthProvider'
+  - module: 'raiden_synapse_modules.eth_auth_provider.EthAuthProvider'
     config:
       enabled: true
-  - module: 'admin_user_auth_provider.AdminUserAuthProvider'
+  - module: 'raiden_synapse_modules.admin_user_auth_provider.AdminUserAuthProvider'
     config:
       enabled: true
       credentials_file: /config/admin_user_cred.json
-  - module: 'federation_whitelist_reloader.FederationWhitelistReloaderProvider'
+  - module: 'raiden_synapse_modules.federation_whitelist_reloader.FederationWhitelistReloaderProvider'
     config:
       enabled: true
 
@@ -129,7 +129,7 @@ trusted_third_party_id_servers:
 presence:
   enabled: true
   presence_router:
-    module: raiden_synapse_modules.pfs_presence_router.PFSPresenceRouter
+    module: raiden_synapse_modules.presence_router.pfs.PFSPresenceRouter
     config:
       ethereum_rpc: ${ETH_RPC}
       service_registry_address: ${SERVICE_REGISTRY}
