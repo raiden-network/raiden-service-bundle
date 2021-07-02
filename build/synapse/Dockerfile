@@ -26,11 +26,8 @@ RUN /synapse-venv/bin/pip install \
 
 # XXX Temporary hot-patch while https://github.com/matrix-org/synapse/pull/9820 is not released yet -- note: this should
 # be run in  in workerless setup
-RUN sed -i 's/\(\s*\)if self.worker_type/\1if True or self.worker_type/' /synapse-venv/lib/python3.9/site-packages/raiden_synapse_modules/pfs_presence_router.py
+RUN sed -i 's/\(\s*\)if self.worker_type/\1if True or self.worker_type/' /synapse-venv/lib/python3.9/site-packages/raiden_synapse_modules/presence_router/pfs.py
 
-COPY eth_auth_provider.py /synapse-venv/lib/python3.9/site-packages/
-COPY admin_user_auth_provider.py /synapse-venv/lib/python3.9/site-packages/
-COPY federation_whitelist_reloader.py /synapse-venv/lib/python3.9/site-packages/
 COPY synapse-entrypoint.sh /bin/
 COPY render_config_template.py /bin/
 COPY --from=RAIDEN /known_servers.default.txt /
