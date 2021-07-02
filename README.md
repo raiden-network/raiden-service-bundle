@@ -151,11 +151,11 @@ can identify this, if there is an `rcX` at the end of the version (E.g. `2019.03
 [latest full release](https://github.com/raiden-network/raiden-service-bundle/releases/latest). If the version is
 different from what you see below, you should stick to the "full release" and replace the version accordingly.
 
-1. Clone the [current release version of this repository](https://github.com/raiden-network/raiden-service-bundle/tree/2021.06.0rc0)
+1. Clone the [current release version of this repository](https://github.com/raiden-network/raiden-service-bundle/tree/2021.07.0rc0)
    to a suitable location on the server:
 
    ```shell
-   git clone -b 2021.06.0rc0 https://github.com/raiden-network/raiden-service-bundle.git
+   git clone -b 2021.07.0rc0 https://github.com/raiden-network/raiden-service-bundle.git
    ```
 1. Copy `.env.template` to `.env` and modify the values to fit your setup. Please read [Configuring the `.env` file](#configuring-the-env-file) for detailed information.
    - We would appreciate it if you allow us access to the monitoring interfaces
@@ -271,7 +271,7 @@ Afterwards run the following commands:
 git fetch origin --tags
 git reset --hard <new-release-tag>
 docker-compose pull
-docker-compose up -d
+docker-compose up -d --remove-orphans
 ```
 ## Notes:
 

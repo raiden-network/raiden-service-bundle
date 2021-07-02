@@ -1,4 +1,7 @@
 ## Changelog
+- 2021-07-01 - `2021.07.0rc0` - **Release Candidate**
+  - Upgrade to Synapse 1.37.1
+  - Move more modules to `raiden-synapse-modules`
 - 2021-05-12 - `2021.05.0-rc3` - **Release Candidate**
   - internal module to update federation whitelist
 - 2021-05-10 - `2021.05.0-rc1` - **Release Candidate**
