@@ -7,6 +7,7 @@
     "all_servers": [
         "transport.raiden.badgateway.tech",
         "transport.raiden.overdoze.se",
-        "transport.raijin1.raiden.ninja"
+        "transport.raijin1.raiden.ninja",
+        "transport.raiden.dappnode.io"
     ]
 }
