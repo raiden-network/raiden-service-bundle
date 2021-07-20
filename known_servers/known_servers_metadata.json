@@ -8,6 +8,9 @@
     "transport.raiden.badgateway.tech": {
         "operator": "boris"
     },
+    "transport.raiden.dappnode.io": {
+        "operator": "dappnode"
+    },
     "transport.transport01.raiden.network": {
         "operator": "rdn-t01"
     },
