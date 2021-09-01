@@ -7,7 +7,7 @@ elif [[ ! -z ${CIRCLE_TAG} ]]; then
   export VERSION_TAG="${CIRCLE_TAG}"
 elif [[ ! -z ${CIRCLE_PULL_REQUEST} ]]; then
   # Non-forked PR
-  export VERSION_TAG="PR-${CIRCLE_PULL_REQUEST##*/}.${CIRCLE_WORKFLOW_ID:0:4}"
+  export VERSION_TAG="PR-${CIRCLE_PULL_REQUEST##*/}.${CIRCLE_WORKFLOW_ID:0:4}.g${CIRCLE_SHA1:0:7}"
 else
   export VERSION_TAG="nightly"
 fi
