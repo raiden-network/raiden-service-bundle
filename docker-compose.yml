@@ -152,7 +152,6 @@ services:
       - "traefik.http.routers.synapse.middlewares=tls-headers-middleware@docker"
       - "traefik.http.routers.synapse.service=synapse"
       - "traefik.http.services.synapse.loadbalancer.server.port=8008"
-      - "traefik.http.services.synapse.loadbalancer.healthcheck.path=/_matrix/client/versions"
       - "traefik.http.middlewares.tls-headers-middleware.headers.customrequestheaders.X-Forwarded-Proto=https"
       - "traefik.http.routers.metrics.rule=Host(`metrics.transport.${SERVER_NAME}`)"
       - "traefik.http.routers.metrics.tls=true"
