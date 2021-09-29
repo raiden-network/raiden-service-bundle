@@ -27,3 +27,4 @@ config/synapse/workers/user_dir*
 
 .mypy_cache
 venv/
+docker-compose.override.y*
