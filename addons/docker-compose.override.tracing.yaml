@@ -1,0 +1,16 @@
+version: '2.3'
+
+services:
+  pfs:
+    environment:
+      - JAEGER_AGENT_HOST=jaeger_agent
+      - JAEGER_AGENT_PORT=6831
+      - PFS_ENABLE_TRACING=TRUE
+    depends_on:
+      jaeger_agent:
+        condition: service_started
+
+  jaeger_agent:
+    image: jaegertracing/jaeger-agent
+    restart: always
+    command: ["--reporter.grpc.host-port=${JAEGER_COLLECTOR}", "--agent.tags=server.name=${SERVER_NAME}"]
