@@ -3,7 +3,7 @@ version: '2.3'
 # versions: change these in order to pin versions for a certain releases
 x-versions:
   services: &IMAGE_RAIDEN_SERVICES_VERSION
-    image: raidennetwork/raiden-services:v0.18.2
+    image: raidennetwork/raiden-services:v0.18.3
   db: &IMAGE_DB_VERSION
     image: raidennetwork/raiden-service-bundle:PR-287.475c-db
   synapse: &IMAGE_SYNAPSE_VERSION
