@@ -1,4 +1,6 @@
 ## Changelog
+- 2021-12-06 - `2021.12.0rc0` - **Release Candidate**
+  - Upgrade to Raiden 3.0.0rc8
 - 2021-07-01 - `2021.07.0rc0` - **Release Candidate**
   - Upgrade to Synapse 1.37.1
   - Move more modules to `raiden-synapse-modules`
@@ -36,10 +38,10 @@
 - 2020-10-07 - `2020.10.2` - **Bugfix release**
   - Fix a few small bugs
     - Stop Room Ensurer crashing when other servers are unreachable
-    - Fix restart policy of DB & Redis metrics containers 
+    - Fix restart policy of DB & Redis metrics containers
 - 2020-10-06 - `2020.10.1` - **Bugfix release**
   - Upgrade to Raiden Services `v0.13.1`
-    - This fixes a bug with the services metrics 
+    - This fixes a bug with the services metrics
 - 2020-10-05 - `2020.10.0` - **Upgrade release**
   - Upgrade Synapse to `v1.19.1`
   - Upgrade Raiden Services to `v0.13.0`
