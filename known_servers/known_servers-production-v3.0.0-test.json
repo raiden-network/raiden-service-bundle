@@ -1,9 +1,0 @@
-
-{
-    "active_servers": [
-        "transport.mainnet-test-rsb.env.raiden.network"
-    ],
-    "all_servers": [
-        "transport.mainnet-test-rsb.env.raiden.network"
-    ]
-}
