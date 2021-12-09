@@ -122,6 +122,14 @@ Note: The default Postgres configuration assumes 16GiB of system RAM
 
 ## Installation
 
+> **Note**
+>
+> Running an RSB provides important infrastructure to users of the Raiden
+> Network and failures potentially affect a lot of users. It is therefore
+> recommended to have devops experience and basic knowledge of the Ethereum
+> ecosystem in order to run an RSB. Also a minimum commitment of a reasonable
+> response time in case of outages is required.
+
 ### Preparation
 
 1. Provision a server that meets the [hardware](#hardware) and [software](#software) requirements listed above.
@@ -138,7 +146,7 @@ Note: The default Postgres configuration assumes 16GiB of system RAM
 **NOTE:**
 
 If you intend to use a subdomain it is important to be aware of the security implications.
-Sudomains share Cookies and Browser LocalStoarage with the apex domain.
+Subdomains share Cookies and Browser LocalStorage with the apex domain.
 Therefore we strongly suggest that a subdomain is only used below an apex domain that does *not*
 host an application that relies on either Cookies or LocalStorage for security relevant purposes (e.g. user authentication).
 
@@ -168,11 +176,12 @@ different from what you see below, you should stick to the "full release" and re
 
 **NOTE:**
 
-After a new RSB has been registered and added to the `known_servers.main.yaml` file it can take up
-to 24 hours for the information to propagate to existing RSB installations.
+After a new RSB has been registered and added to the
+`known_servers/known_servers-production-v3.0.0.json` file it can take up to 24
+hours for the information to propagate to existing RSB installations.
 
-During this time some services will not yet be able to start successfully and log
-various error messages. This is expected behaviour and will resolve itself.
+During this time some services will not yet be able to start successfully and
+log various error messages. This is expected behaviour and will resolve itself.
 
 After the 24h have elapsed all services should run successfully.
 See [verifying that the RSB is working](#verifying-that-the-rsb-is-working) below.
@@ -181,15 +190,15 @@ See [verifying that the RSB is working](#verifying-that-the-rsb-is-working) belo
 After cloning the repository the `.env` file needs to be configured. A template named `.env.template` is provided. Below you find a detailed list of the parameters to be set and their explanations.
 
 - `SERVER_NAME`: The host domain without protocol prefix `https://` respectively
-- `LETSENCRYPT_EMAIL`: Email addres to use when requesting LetsEncrypt certificates
+- `LETSENCRYPT_EMAIL`: Email address to use when requesting LetsEncrypt certificates
 - `CIDR_ALLOW_METRICS`: Metrics whitelist. IP address/network whitelists for access to non-public parts of the service. Uses CIDR notation. Separate multiple entries with commas. Example values: 10.0.0.0/16,10.1.2.3/32 or 10.1.2.3/32.
 - `CIDR_ALLOW_PROXY`: Proxy metrics / management interface whitelist
 - `WORKER_COUNT`: Number of worker processes to start, setting this to the number of CPUs is a good starting point
-- `DATA_DIR`: Data dir location. Optional, defaults to ./data in the checkout directory.
+- `DATA_DIR`: Data dir location. Optional, defaults to ./data in the checkout directory
 - `URL_KNOWN_FEDERATION_SERVERS`: URL to use to fetch federation whitelist - used only for testing
 - `KEYSTORE_FILE`: The keystore file which has to be located in ${DATA_DIR}/keystore
 - `PASSWORD`: Password to decrypt the keystore file
-- `ETH_RPC`: Ethereum RPC URL
+- `ETH_RPC`: Ethereum RPC URL. This is used to communicate with the Ethereum blockchain. You can either [host a node yourself](https://ethereum.org/en/developers/docs/nodes-and-clients/run-a-node/) or use a service like [Infura](https://infura.io/). Regardless, the RSB requires a minimum of 200,000 requests per day and potentially more depending on traffic. Please make sure that the chosen service is able to handle this.
 - `PFS_ACCEPT_DISCLAIMER`: TRUE or FALSE if you accept the Pathfinding Service disclaimer or not. Read the Disclaimer [here](https://github.com/raiden-network/raiden-services/blob/f4bcb9c289e093754204fe18684e4b57558ea29b/src/pathfinding_service/constants.py#L34)
 - `MS_ACCEPT_DISCLAIMER`: TRUE or FALSE if you accept the Monitoring Service disclaimer or not. Read the Disclaimer [here](https://github.com/raiden-network/raiden-services/blob/f4bcb9c289e093754204fe18684e4b57558ea29b/src/monitoring_service/constants.py#L22)
 - `CHAIN_ID`: Chain ID of the connected Ethereum node.
@@ -197,21 +206,24 @@ After cloning the repository the `.env` file needs to be configured. A template 
 - `PFS_OPERATOR`: Official Operator Name
 - `PFS_INFO_MESSAGE`: Info message. Will be displayed on info endpoint.
 - `LOG_LEVEL`: 'INFO' or 'DEBUG' recommended
-
+- `SERVICE_REGISTRY`: The address of the ServiceRegistry contract to use. When running on mainnet, use the address of latest deployed contract which can be found here: https://github.com/raiden-network/raiden-contracts/blob/bf417e48fc090f6613b40d07c223bf27bb0c5ad1/raiden_contracts/data_0.40.0/deployment_services_mainnet.json#L6.
 
 ### Registering as a RSB Provider
 For your newly deployed Raiden Service Bundle to be used by Raiden nodes it must be registered.
 
 1. **Registering in the Services Registry On-Chain**
   - In order to register as a service provider you need to run the script [`register-service-provider.sh`](https://github.com/raiden-network/raiden-service-bundle/blob/master/register-service-provider.sh)` register`.
+  - In case you abort the script before finishing the registration process it is possible to continue the process by running the script again.
   - Make sure that you have configured a keystore file (`$KEYSTORE_FILE` in `.env`). If not, the script will exit with an error and you cannot register as a service provider.
-  - Make sure that the configured account has enough funding to register as a service provider.
-    You can check the [registry contract](https://etherscan.io/address/0xa80aEc9eebD8058A1468e563C025999590F32C08#readContract) for the current price of a slot.
+  - Make sure you have ETH on the above account. An estimate will be shown during the registration process, before any transactions are sent.
+  - Make sure that the configured account has enough RDN funding to register as a service provider.
+    You can check the [registry contract](https://etherscan.io/address/0x1F54A809480E5E6349F09aaCaD14ec94C92EecD9#readContract for the current price of a slot.
     You will find the price under `3. currentPrice`. To get the price in RDN divide the value by (10^18).
-    The script will also inform you about price as well.
+    The script will inform you about the price during the registration process as well.
+  - If you do not have sufficient RDN, you can either use an exchange of your choice or an on-chain decentralized exchange like [Uniswap](https://app.uniswap.org/#/swap?outputCurrency=0x255aa6df07540cb5d3d297f0d0d4d84cb52bc8e6) to acquire it.
 
 
-2. **Extending `known_servers/known_servers-production-v1.2.0.json`**
+2. **Extending `known_servers/known_servers-production-v3.0.0.json`**
   - In order to be whitelisted in the Matrix Federation, the list needs to be extended with your server name.
   - [Create an issue](https://github.com/raiden-network/raiden-service-bundle/issues/new) and submit the
    domain / URL of the newly deployed server for inclusion in the list of known servers.
@@ -256,7 +268,7 @@ See [troubleshooting the RSB installation](#troubleshooting-the-rsb-installation
 
 ### Troubleshooting the RSB installation
 
-If you experience any unexpected behavior while installing the RSB, please do not hesitate to contact the development team. The fastet way to reach out to us is via the plublic [Raiden Gitter channel](https://gitter.im/raiden-network/raiden).
+If you experience any unexpected behavior while installing the RSB, please do not hesitate to contact the development team. The fastest way to reach out to us is via the public [Raiden Gitter channel](https://gitter.im/raiden-network/raiden).
 Otherwise, you can also open an issue in this repository with the predefined template for a [bug report](https://github.com/raiden-network/raiden-service-bundle/issues/new?template=bug_report.md)
 
 
