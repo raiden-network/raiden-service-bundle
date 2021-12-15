@@ -1,5 +1,5 @@
 ## Changelog
-- 2021-12-06 - `2021.12.0rc0` - **Release Candidate**
+- 2021-12-06 - `2021.12.0` - **Release Candidate**
   - Upgrade to Raiden 3.0.0rc8
 - 2021-07-01 - `2021.07.0rc0` - **Release Candidate**
   - Upgrade to Synapse 1.37.1
