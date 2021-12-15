@@ -217,7 +217,7 @@ For your newly deployed Raiden Service Bundle to be used by Raiden nodes it must
   - Make sure that you have configured a keystore file (`$KEYSTORE_FILE` in `.env`). If not, the script will exit with an error and you cannot register as a service provider.
   - Make sure you have ETH on the above account. An estimate will be shown during the registration process, before any transactions are sent.
   - Make sure that the configured account has enough RDN funding to register as a service provider.
-    You can check the [registry contract](https://etherscan.io/address/0x1F54A809480E5E6349F09aaCaD14ec94C92EecD9#readContract for the current price of a slot.
+    You can check the [registry contract](https://etherscan.io/address/0x1F54A809480E5E6349F09aaCaD14ec94C92EecD9#readContract) for the current price of a slot.
     You will find the price under `3. currentPrice`. To get the price in RDN divide the value by (10^18).
     The script will inform you about the price during the registration process as well.
   - If you do not have sufficient RDN, you can either use an exchange of your choice or an on-chain decentralized exchange like [Uniswap](https://app.uniswap.org/#/swap?outputCurrency=0x255aa6df07540cb5d3d297f0d0d4d84cb52bc8e6) to acquire it.
