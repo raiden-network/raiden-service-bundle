@@ -9,7 +9,7 @@ RUN /opt/venv/bin/python -c \
 FROM python:3.9
 LABEL maintainer="Raiden Network Team <contact@raiden.network>"
 
-RUN python -m venv /synapse-venv && /synapse-venv/bin/pip install wheel
+RUN python -m venv /synapse-venv && /synapse-venv/bin/pip install -U wheel pip
 
 ARG SYNAPSE_VERSION
 ARG RAIDEN_SYNAPSE_MODULES
