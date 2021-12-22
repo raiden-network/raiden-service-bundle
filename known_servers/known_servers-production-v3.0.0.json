@@ -1,4 +1,8 @@
 {
-    "active_servers": [],
-    "all_servers": []
+    "active_servers": [
+        "transport.mainnet-rsb.brainbot.li"
+    ],
+    "all_servers": [
+        "transport.mainnet-rsb.brainbot.li"
+    ]
 }
