@@ -132,7 +132,7 @@ presence:
     module: raiden_synapse_modules.presence_router.pfs.PFSPresenceRouter
     config:
       ethereum_rpc: ${ETH_RPC}
-      service_registry_address: ${SERVICE_REGISTRY}
+      service_registry_address: "${SERVICE_REGISTRY}"
       blockchain_sync_seconds: 15
 
 ## Metrics ###
