@@ -18,10 +18,6 @@ RUN /synapse-venv/bin/pip install \
     docker-py \
     raiden-synapse-modules==${RAIDEN_SYNAPSE_MODULES}
 
-# XXX Temporary hot-patch while https://github.com/matrix-org/synapse/pull/9820 is not released yet -- note: this should
-# be run in  in workerless setup
-RUN sed -i 's/\(\s*\)if self.worker_type/\1if True or self.worker_type/' /synapse-venv/lib/python3.9/site-packages/raiden_synapse_modules/presence_router/pfs.py
-
 ARG KNOWN_SERVERS_FILE_URL
 RUN curl --output /known_servers.default.txt --location "${KNOWN_SERVERS_FILE_URL}"
 
