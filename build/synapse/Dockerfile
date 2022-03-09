@@ -1,10 +1,4 @@
-ARG RAIDEN_VERSION
-FROM raidennetwork/raiden:${RAIDEN_VERSION} AS RAIDEN
-
-RUN /opt/venv/bin/python -c \
-    'from raiden.settings import DEFAULT_MATRIX_KNOWN_SERVERS; \
-    from raiden.constants import Environment; \
-    print(DEFAULT_MATRIX_KNOWN_SERVERS[Environment.PRODUCTION])' > /known_servers.default.txt
+ARG KNOWN_SERVERS_FILE_URL="https://github.com/raiden-network/raiden-service-bundle/blob/master/known_servers/known_servers-production-v3.0.0.json"
 
 FROM python:3.9
 LABEL maintainer="Raiden Network Team <contact@raiden.network>"
@@ -28,9 +22,11 @@ RUN /synapse-venv/bin/pip install \
 # be run in  in workerless setup
 RUN sed -i 's/\(\s*\)if self.worker_type/\1if True or self.worker_type/' /synapse-venv/lib/python3.9/site-packages/raiden_synapse_modules/presence_router/pfs.py
 
+ARG KNOWN_SERVERS_FILE_URL
+RUN curl --output /known_servers.default.txt --location "${KNOWN_SERVERS_FILE_URL}"
+
 COPY synapse-entrypoint.sh /bin/
 COPY render_config_template.py /bin/
-COPY --from=RAIDEN /known_servers.default.txt /
 
 ENTRYPOINT ["/bin/synapse-entrypoint.sh"]
 CMD ["synapse"]
