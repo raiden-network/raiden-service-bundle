@@ -1,4 +1,9 @@
 ## Changelog
+- 2022-05-02 - `2022.05.0` - **Upgrade Release**
+  - Updated `raiden-services` to `v2.0.0`
+  - Updated `raiden-synapse-modules` to `0.1.4`
+  - Removed `raiden` dependency for synapse image
+  - Fix synapse configuration file format
 - 2021-12-06 - `2021.12.0` - **Release Candidate**
   - Upgrade to Raiden 3.0.0rc8
 - 2021-07-01 - `2021.07.0rc0` - **Release Candidate**
