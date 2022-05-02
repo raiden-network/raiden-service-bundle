@@ -206,7 +206,7 @@ After cloning the repository the `.env` file needs to be configured. A template 
 - `PFS_OPERATOR`: Official Operator Name
 - `PFS_INFO_MESSAGE`: Info message. Will be displayed on info endpoint.
 - `LOG_LEVEL`: 'INFO' or 'DEBUG' recommended
-- `SERVICE_REGISTRY`: The address of the ServiceRegistry contract to use. When running on mainnet, use the address of latest deployed contract which can be found here: https://github.com/raiden-network/raiden-contracts/blob/bf417e48fc090f6613b40d07c223bf27bb0c5ad1/raiden_contracts/data_0.40.0/deployment_services_mainnet.json#L6.
+- `SERVICE_REGISTRY`: The address of the ServiceRegistry contract to use. When running on mainnet, use the address of latest deployed contract which can be found here: https://github.com/raiden-network/raiden-contracts/blob/master/raiden_contracts/data_0.50.0/deployment_services_arbitrum-one.json#L6
 
 ### Registering as a RSB Provider
 For your newly deployed Raiden Service Bundle to be used by Raiden nodes it must be registered.
