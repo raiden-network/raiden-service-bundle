@@ -10,7 +10,7 @@ commands:
       build-target:
         description: "Which component are we building"
         type: enum
-        enum: ["synapse", "db", "well_known_server", "purger"]
+        enum: ["synapse", "db", "well_known_server"]
     steps:
       - checkout
       - setup_remote_docker:
@@ -63,13 +63,6 @@ jobs:
       - build-container:
           build-target: well_known_server
 
-  build_purger:
-    executor: default
-    steps:
-      - build-container:
-          build-target: purger
-
-
 workflows:
   version: 2
   build_images:
@@ -77,7 +70,6 @@ workflows:
       - build_synapse
       - build_db
       - build_well_known
-      - build_purger
 
   tagged_images:
     jobs:
@@ -94,12 +86,6 @@ workflows:
             branches:
               ignore: /.*/
       - build_well_known:
-          filters:
-            tags:
-              only: /.+/
-            branches:
-              ignore: /.*/
-      - build_purger:
           filters:
             tags:
               only: /.+/
