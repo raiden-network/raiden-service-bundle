@@ -1,0 +1,10 @@
+{
+    "active_servers": [
+        "transport.goerli-latest1.env.raiden.network",
+        "transport.goerli-latest2.env.raiden.network"
+    ],
+    "all_servers": [
+        "transport.goerli-latest1.env.raiden.network",
+        "transport.goerli-latest2.env.raiden.network"
+    ]
+}
