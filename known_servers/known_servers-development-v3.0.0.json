@@ -1,16 +1,10 @@
 {
     "active_servers": [
         "transport.transport01.raiden.network",
-        "transport.transport02.raiden.network",
-        "transport.transport03.raiden.network",
-        "transport.transport04.raiden.network",
         "transport.transport05.raiden.network"
     ],
     "all_servers": [
         "transport.transport01.raiden.network",
-        "transport.transport02.raiden.network",
-        "transport.transport03.raiden.network",
-        "transport.transport04.raiden.network",
         "transport.transport05.raiden.network"
     ]
 }
